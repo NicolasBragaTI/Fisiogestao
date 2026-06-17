@@ -166,6 +166,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .overdue-alert i{font-size:20px;color:var(--red-text);flex-shrink:0}
 .overdue-alert-text{font-size:13px;color:var(--red-text);font-weight:500}
 
+/* AGENDA CALENDAR */
+.agenda-grid{display:grid;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--surface);min-width:700px}
+.agenda-header{display:grid;background:var(--green);color:#fff}
+.agenda-header-time{width:60px;padding:10px 8px;font-size:11px;border-right:1px solid rgba(255,255,255,0.2)}
+.agenda-header-day{flex:1;padding:10px 8px;text-align:center;border-left:1px solid rgba(255,255,255,0.2)}
+.agenda-header-day.today{background:rgba(255,255,255,0.18);font-weight:700}
+.agenda-header-day .dow{font-size:11px;opacity:0.8;text-transform:uppercase;letter-spacing:.04em}
+.agenda-header-day .dom{font-size:20px;font-weight:700;line-height:1.2}
+.agenda-row{display:grid;border-top:1px solid var(--border)}
+.agenda-time{width:60px;padding:4px 8px;font-size:11px;color:var(--text3);border-right:1px solid var(--border);text-align:right;padding-top:6px}
+.agenda-cell{flex:1;border-left:1px solid var(--border);min-height:40px;position:relative;cursor:pointer;transition:background 0.1s}
+.agenda-cell:hover{background:var(--green-light)}
+.agenda-cell.today-col{background:rgba(26,107,60,0.03)}
+.agenda-block{position:absolute;left:2px;right:2px;border-radius:6px;padding:3px 6px;font-size:11px;font-weight:600;cursor:pointer;overflow:hidden;z-index:2;box-shadow:0 1px 3px rgba(0,0,0,0.15);line-height:1.3}
+.agenda-block:hover{filter:brightness(0.93)}
 /* MOBILE HAMBURGER */
 .hamburger{display:none;align-items:center;justify-content:center;width:36px;height:36px;border:none;background:transparent;cursor:pointer;border-radius:var(--radius);color:var(--text);font-size:22px;flex-shrink:0}
 .hamburger:hover{background:var(--green-light)}
@@ -202,8 +217,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   <nav class="sidebar-nav">
     <button class="nav-item active" onclick="navTo('visao-geral',this)"><i class="ti ti-layout-dashboard"></i> Visão geral</button>
     <button class="nav-item" onclick="navTo('pacientes',this)"><i class="ti ti-users"></i> Pacientes</button>
-    <button class="nav-item" onclick="navTo('pagamentos',this)"><i class="ti ti-credit-card"></i> Pagamentos</button>
+    <button class="nav-item" onclick="navTo('agenda',this)"><i class="ti ti-calendar-week"></i> Agenda</button>
     <button class="nav-item" onclick="navTo('atendimentos',this)"><i class="ti ti-calendar"></i> Atendimentos</button>
+    <button class="nav-item" onclick="navTo('pagamentos',this)"><i class="ti ti-credit-card"></i> Pagamentos</button>
     <div class="nav-section">Relatórios</div>
     <button class="nav-item" onclick="navTo('relatorio',this)"><i class="ti ti-chart-bar"></i> Relatório mensal</button>
   </nav>
@@ -345,6 +361,27 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div id="pac-list"></div>
     </div>
 
+    <!-- ===== AGENDA ===== -->
+    <div class="page" id="page-agenda">
+      <div class="section-hdr" style="flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="agendaNavAnterior()"><i class="ti ti-chevron-left"></i></button>
+          <button class="btn btn-outline btn-sm" id="btn-agenda-hoje" onclick="agendaNavAtual()">Hoje</button>
+          <button class="btn btn-outline btn-sm" onclick="agendaNavProximo()"><i class="ti ti-chevron-right"></i></button>
+          <span id="agenda-periodo" style="font-size:15px;font-weight:600;color:var(--text);margin-left:4px"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="display:flex;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:2px;gap:2px">
+            <button id="vbtn-diario" class="btn btn-sm" onclick="setAgendaView('diario')" style="padding:4px 12px;font-size:12px">Diário</button>
+            <button id="vbtn-semanal" class="btn btn-sm" onclick="setAgendaView('semanal')" style="padding:4px 12px;font-size:12px">Semanal</button>
+            <button id="vbtn-mensal" class="btn btn-sm" onclick="setAgendaView('mensal')" style="padding:4px 12px;font-size:12px">Mensal</button>
+          </div>
+          <button class="btn btn-primary" onclick="openModalAtend()"><i class="ti ti-plus"></i> Novo agendamento</button>
+        </div>
+      </div>
+      <div id="agenda-cal" style="overflow-x:auto"></div>
+    </div>
+
     <!-- ===== RELATÓRIO ===== -->
     <div class="page" id="page-relatorio">
       <div class="section-hdr">
@@ -381,9 +418,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <label>Paciente *</label>
         <select id="atend-paciente" onchange="preencherValorPadrao()"></select>
       </div>
-      <div class="fg2">
+      <div class="fg3">
         <div class="form-group"><label>Data do atendimento *</label><input type="date" id="atend-data"></div>
-        <div class="form-group"><label>Horário</label><input type="time" id="atend-hora"></div>
+        <div class="form-group"><label>Horário início</label><input type="time" id="atend-hora"></div>
+        <div class="form-group"><label>Horário fim</label><input type="time" id="atend-hora-fim"></div>
       </div>
       <div class="fg3">
         <div class="form-group"><label>Valor da sessão (R$) *</label><input type="number" id="atend-valor" min="0" step="0.01" placeholder="0,00" oninput="calcSaldo()"></div>
@@ -508,7 +546,7 @@ async function loadData(){
     end: p.end_local||'', diag: p.diag||'', valorPadrao: p.valor_padrao||'', obs: p.obs||''
   }));
   atendimentos = (atends||[]).map(a => ({
-    id: a.id, pacienteId: a.paciente_id, data: a.data||'', hora: a.hora||'',
+    id: a.id, pacienteId: a.paciente_id, data: a.data||'', hora: a.hora||'', horaFim: a.hora_fim||'',
     valor: a.valor||0, valorRecebido: a.valor_recebido||0, metodo: a.metodo||'', status: a.status||'pendente',
     vencimento: a.vencimento||'', obs: a.obs||''
   }));
@@ -524,7 +562,7 @@ async function dbSavePaciente(p){
 
 async function dbSaveAtend(a){
   const { error } = await _sb.from('atendimentos').upsert({
-    id: a.id, paciente_id: a.pacienteId, data: a.data||null, hora: a.hora||null,
+    id: a.id, paciente_id: a.pacienteId, data: a.data||null, hora: a.hora||null, hora_fim: a.horaFim||null,
     valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
     vencimento: a.vencimento||null, obs: a.obs||null
   });
@@ -614,7 +652,7 @@ function navTo(page, btn){
   closeSidebar();
   const titles={
     'visao-geral':'Visão geral','pagamentos':'Pagamentos',
-    'atendimentos':'Atendimentos','pacientes':'Pacientes','relatorio':'Relatório mensal'
+    'atendimentos':'Atendimentos','pacientes':'Pacientes','relatorio':'Relatório mensal','agenda':'Agenda'
   };
   document.getElementById('page-title').textContent=titles[page]||page;
   if(page==='visao-geral') renderDashboard();
@@ -622,6 +660,7 @@ function navTo(page, btn){
   if(page==='atendimentos'){populateAtFilters();renderAtendimentos();}
   if(page==='pacientes') renderPacientes();
   if(page==='relatorio'){populateRelMes();renderRelatorio();}
+  if(page==='agenda'){semanaAtual();}
 }
 
 function navToLink(page){
@@ -1007,6 +1046,7 @@ function openModalAtend(id){
     sel.value=a.pacienteId;
     document.getElementById('atend-data').value=a.data;
     document.getElementById('atend-hora').value=a.hora||'';
+    document.getElementById('atend-hora-fim').value=a.horaFim||'';
     document.getElementById('atend-valor').value=a.valor||'';
     document.getElementById('atend-recebido').value=a.valorRecebido||'';
     document.getElementById('atend-metodo').value=a.metodo||'Pix';
@@ -1017,6 +1057,7 @@ function openModalAtend(id){
     sel.value=pacientes[0]?.id||'';
     document.getElementById('atend-data').value=t;
     document.getElementById('atend-hora').value='';
+    document.getElementById('atend-hora-fim').value='';
     const p=pacientes.find(x=>x.id===sel.value);
     document.getElementById('atend-valor').value=p?.valorPadrao||'';
     document.getElementById('atend-recebido').value='';
@@ -1065,6 +1106,7 @@ async function salvarAtend(){
     id:editAtendId||Date.now().toString(),
     pacienteId:pid,data,
     hora:document.getElementById('atend-hora').value,
+    horaFim:document.getElementById('atend-hora-fim').value,
     valor:valorNum,
     valorRecebido:recebido,
     metodo:document.getElementById('atend-metodo').value,
@@ -1196,6 +1238,251 @@ function globalSearch(){
   if(!q) return;
   const match=pacientes.filter(p=>p.nome.toLowerCase().includes(q));
   if(match.length===1) verPaciente(match[0].id);
+}
+
+// ── AGENDA ───────────────────────────────────────────────
+let agendaBase = null; // segunda-feira da semana atual
+
+const AGENDA_CORES = ['#1a6b3c','#2d9158','#1a6b9a','#7b4fa6','#c97c00','#d4455a','#2a8a7e','#5a7a2a'];
+function corPaciente(pid){
+  const idx = pacientes.findIndex(p=>p.id===pid);
+  return AGENDA_CORES[idx % AGENDA_CORES.length] || '#1a6b3c';
+}
+
+let agendaView = 'mensal'; // 'diario' | 'semanal' | 'mensal'
+
+function dateStr(d){ return d.toISOString().split('T')[0]; }
+
+function atualizarBotoesView(){
+  ['diario','semanal','mensal'].forEach(x=>{
+    const btn = document.getElementById('vbtn-'+x);
+    if(btn) btn.style.cssText = x===agendaView
+      ? 'padding:4px 12px;font-size:12px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer'
+      : 'padding:4px 12px;font-size:12px;background:transparent;color:var(--text2);border:none;cursor:pointer';
+  });
+  const labels = {diario:'Hoje', semanal:'Esta semana', mensal:'Este mês'};
+  const btnHoje = document.getElementById('btn-agenda-hoje');
+  if(btnHoje) btnHoje.textContent = labels[agendaView]||'Hoje';
+}
+function setAgendaView(v){
+  agendaView = v;
+  atualizarBotoesView();
+  renderAgenda();
+}
+
+function agendaNavAtual(){
+  agendaBase = new Date();
+  if(agendaView==='mensal') agendaBase.setDate(1);
+  renderAgenda();
+}
+function agendaNavAnterior(){
+  if(agendaView==='mensal') agendaBase.setMonth(agendaBase.getMonth()-1);
+  else if(agendaView==='semanal') agendaBase.setDate(agendaBase.getDate()-7);
+  else agendaBase.setDate(agendaBase.getDate()-1);
+  renderAgenda();
+}
+function agendaNavProximo(){
+  if(agendaView==='mensal') agendaBase.setMonth(agendaBase.getMonth()+1);
+  else if(agendaView==='semanal') agendaBase.setDate(agendaBase.getDate()+7);
+  else agendaBase.setDate(agendaBase.getDate()+1);
+  renderAgenda();
+}
+// aliases antigos para compatibilidade
+function semanaAtual(){ agendaBase = new Date(); if(agendaView==='mensal') agendaBase.setDate(1); renderAgenda(); }
+function semanaAnterior(){ agendaNavAnterior(); }
+function semanaProxima(){ agendaNavProximo(); }
+
+function renderAgenda(){
+  if(!agendaBase){ agendaBase = new Date(); }
+  atualizarBotoesView();
+  if(agendaView==='diario') return renderAgendaDiaria();
+  if(agendaView==='semanal') return renderAgendaSemanal();
+  return renderAgendaMensal();
+}
+
+// ── VISÃO DIÁRIA ──────────────────────────────────────────
+function renderAgendaDiaria(){
+  const hojeStr = dateStr(new Date());
+  const ds = dateStr(agendaBase);
+  const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const DOWS=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  document.getElementById('agenda-periodo').textContent =
+    `${DOWS[agendaBase.getDay()]}, ${agendaBase.getDate()} de ${MESES[agendaBase.getMonth()]} ${agendaBase.getFullYear()}`;
+
+  const HOUR_H=60, START_H=7, END_H=21;
+  const totalH=END_H-START_H;
+  const totalPx=totalH*HOUR_H;
+  const events=atendimentos.filter(a=>a.data===ds).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+
+  let html=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+    <div style="display:flex;overflow-y:auto;max-height:calc(100vh - 200px)">
+      <div style="width:60px;flex-shrink:0;position:relative;height:${totalPx}px;border-right:1px solid var(--border)">
+        ${Array.from({length:totalH},(_,i)=>`<div style="position:absolute;top:${i*HOUR_H+4}px;right:6px;font-size:11px;color:var(--text3)">${String(START_H+i).padStart(2,'0')}:00</div>`).join('')}
+      </div>
+      <div style="flex:1;position:relative;height:${totalPx}px;background:${ds===hojeStr?'rgba(26,107,60,0.02)':''}">
+        ${Array.from({length:totalH},(_,i)=>`
+          <div style="position:absolute;top:${i*HOUR_H}px;left:0;right:0;height:${HOUR_H}px;border-top:1px solid var(--border);cursor:pointer" class="agenda-cell" onclick="agendaClicar('${ds}','${String(START_H+i).padStart(2,'0')}:00')">
+            ${i%2===0?`<div style="position:absolute;top:${HOUR_H/2}px;left:0;right:0;height:1px;background:var(--border);opacity:0.5"></div>`:''}
+          </div>`).join('')}
+        ${events.map(a=>{
+          if(!a.hora) return '';
+          const [hh,mm]=a.hora.split(':').map(Number);
+          if(hh<START_H||hh>=END_H) return '';
+          const top=((hh-START_H)*60+mm)/60*HOUR_H;
+          let height=HOUR_H;
+          if(a.horaFim){const [fh,fm]=a.horaFim.split(':').map(Number);height=Math.max(30,((fh-hh)*60+(fm-mm))/60*HOUR_H);}
+          const cor=corPaciente(a.pacienteId);
+          const s=statusComVencimento(a);
+          const borda=s==='atrasado'?'#a32d2d':s==='pago'?'#145530':'#c97c00';
+          return `<div class="agenda-block" onclick="event.stopPropagation();editAtend('${a.id}')"
+            style="top:${top+1}px;height:${height-2}px;background:${cor};color:#fff;border-left:4px solid ${borda}">
+            <div style="font-size:11px;opacity:0.85">${a.hora}${a.horaFim?' – '+a.horaFim:''}</div>
+            <div style="font-weight:700;font-size:13px">${nomePac(a.pacienteId)}</div>
+            ${a.obs?`<div style="font-size:11px;opacity:0.8;margin-top:2px">${a.obs}</div>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('agenda-cal').innerHTML=html;
+}
+
+// ── VISÃO SEMANAL ─────────────────────────────────────────
+function renderAgendaSemanal(){
+  const hojeStr=dateStr(new Date());
+  const inicio=new Date(agendaBase);
+  const dow=inicio.getDay();
+  inicio.setDate(inicio.getDate()-dow);
+  const dias=Array.from({length:7},(_,i)=>{const d=new Date(inicio);d.setDate(d.getDate()+i);return d;});
+
+  const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const ini=dias[0],fim=dias[6];
+  document.getElementById('agenda-periodo').textContent = ini.getMonth()===fim.getMonth()
+    ? `${ini.getDate()} – ${fim.getDate()} de ${MESES[ini.getMonth()]}. ${ini.getFullYear()}`
+    : `${ini.getDate()} ${MESES[ini.getMonth()]} – ${fim.getDate()} ${MESES[fim.getMonth()]}. ${fim.getFullYear()}`;
+
+  const DOWS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const HOUR_H=52, START_H=7, END_H=21;
+  const totalH=END_H-START_H;
+  const totalPx=totalH*HOUR_H;
+
+  const byDate={};
+  dias.forEach(d=>{byDate[dateStr(d)]=[];});
+  atendimentos.forEach(a=>{if(byDate[a.data])byDate[a.data].push(a);});
+
+  let html=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;min-width:600px">
+    <div style="display:flex;background:var(--green)">
+      <div style="width:56px;flex-shrink:0"></div>
+      ${dias.map(d=>{const ds=dateStr(d);const isHoje=ds===hojeStr;return `<div style="flex:1;text-align:center;padding:10px 4px;color:#fff;${isHoje?'background:rgba(255,255,255,0.18);':''}"><div style="font-size:10px;opacity:.75;text-transform:uppercase">${DOWS[d.getDay()]}</div><div style="font-size:20px;font-weight:700">${d.getDate()}</div></div>`;}).join('')}
+    </div>
+    <div style="display:flex;overflow-y:auto;max-height:calc(100vh - 220px)">
+      <div style="width:56px;flex-shrink:0;position:relative;height:${totalPx}px;border-right:1px solid var(--border)">
+        ${Array.from({length:totalH},(_,i)=>`<div style="position:absolute;top:${i*HOUR_H+4}px;right:6px;font-size:10px;color:var(--text3)">${String(START_H+i).padStart(2,'0')}:00</div>`).join('')}
+      </div>
+      ${dias.map(d=>{
+        const ds=dateStr(d);
+        const isHoje=ds===hojeStr;
+        return `<div style="flex:1;position:relative;height:${totalPx}px;border-left:1px solid var(--border);background:${isHoje?'rgba(26,107,60,0.03)':''}">
+          ${Array.from({length:totalH},(_,i)=>`<div style="position:absolute;top:${i*HOUR_H}px;left:0;right:0;height:${HOUR_H}px;border-top:1px solid var(--border)" class="agenda-cell" onclick="agendaClicar('${ds}','${String(START_H+i).padStart(2,'0')}:00')"></div>`).join('')}
+          ${byDate[ds].map(a=>{
+            if(!a.hora) return '';
+            const [hh,mm]=a.hora.split(':').map(Number);
+            if(hh<START_H||hh>=END_H) return '';
+            const top=((hh-START_H)*60+mm)/60*HOUR_H;
+            let height=HOUR_H-2;
+            if(a.horaFim){const [fh,fm]=a.horaFim.split(':').map(Number);height=Math.max(22,((fh-hh)*60+(fm-mm))/60*HOUR_H-2);}
+            const cor=corPaciente(a.pacienteId);
+            const s=statusComVencimento(a);
+            const borda=s==='atrasado'?'#a32d2d':s==='pago'?'#145530':'#c97c00';
+            const nome=nomePac(a.pacienteId).split(' ').slice(0,2).join(' ');
+            return `<div class="agenda-block" onclick="event.stopPropagation();editAtend('${a.id}')"
+              style="top:${top+1}px;height:${height}px;background:${cor};color:#fff;border-left:3px solid ${borda}">
+              <div style="font-size:10px;opacity:.85">${a.hora}${a.horaFim?' – '+a.horaFim:''}</div>
+              <div style="font-weight:700;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nome}</div>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+  document.getElementById('agenda-cal').innerHTML=html;
+}
+
+// ── VISÃO MENSAL ──────────────────────────────────────────
+function renderAgendaMensal(){
+  if(!agendaBase){ agendaBase = new Date(); agendaBase.setDate(1); }
+  const ano = agendaBase.getFullYear();
+  const mes = agendaBase.getMonth();
+  const hojeStr = dateStr(new Date());
+
+  const NOMES_MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('agenda-periodo').textContent = `${NOMES_MESES[mes]} ${ano}`;
+
+  const dows=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const primeiroDia = new Date(ano, mes, 1).getDay(); // 0=dom
+  const diasNoMes = new Date(ano, mes+1, 0).getDate();
+
+  // indexar atendimentos do mês
+  const byDate = {};
+  atendimentos.forEach(a=>{
+    if(a.data && a.data.startsWith(`${ano}-${String(mes+1).padStart(2,'0')}`)){
+      if(!byDate[a.data]) byDate[a.data]= [];
+      byDate[a.data].push(a);
+    }
+  });
+
+  let html = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--green)">
+      ${dows.map(d=>`<div style="text-align:center;padding:10px 4px;color:#fff;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">${d}</div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--border)">`;
+
+  // células vazias antes do dia 1
+  for(let i=0;i<primeiroDia;i++){
+    html += `<div style="min-height:110px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface2)"></div>`;
+  }
+
+  for(let dia=1;dia<=diasNoMes;dia++){
+    const ds = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const isHoje = ds===hojeStr;
+    const events = (byDate[ds]||[]).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''));
+    const col = (primeiroDia + dia - 1) % 7;
+    const bRight = col<6 ? '1px solid var(--border)' : 'none';
+
+    html += `<div style="min-height:110px;border-right:${bRight};border-bottom:1px solid var(--border);padding:4px;vertical-align:top;background:${isHoje?'var(--green-light)':'var(--surface)'};cursor:pointer" onclick="agendaClicar('${ds}','')">
+      <div style="font-size:13px;font-weight:${isHoje?'700':'500'};color:${isHoje?'var(--green)':'var(--text)'};width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%;${isHoje?'background:var(--green);color:#fff;':''}margin-bottom:3px">${dia}</div>
+      ${events.slice(0,3).map(a=>{
+        const cor=corPaciente(a.pacienteId);
+        const nome=nomePac(a.pacienteId).split(' ')[0];
+        const hora=a.hora?a.hora.substring(0,5):'';
+        const horaFim=a.horaFim?` – ${a.horaFim.substring(0,5)}`:'';
+        return `<div onclick="event.stopPropagation();editAtend('${a.id}')"
+          style="background:${cor};color:#fff;border-radius:4px;padding:2px 5px;font-size:10px;font-weight:600;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer"
+          title="${nomePac(a.pacienteId)} ${hora}${horaFim}">
+          ${hora} ${nome}${horaFim}
+        </div>`;
+      }).join('')}
+      ${events.length>3?`<div style="font-size:10px;color:var(--text3);padding:1px 4px">+${events.length-3} mais</div>`:''}
+    </div>`;
+  }
+
+  // células vazias depois do último dia
+  const total = primeiroDia + diasNoMes;
+  const restantes = total%7===0 ? 0 : 7-(total%7);
+  for(let i=0;i<restantes;i++){
+    html += `<div style="min-height:110px;border-bottom:1px solid var(--border);background:var(--surface2)"></div>`;
+  }
+
+  html += `</div></div>`;
+  document.getElementById('agenda-cal').innerHTML = html;
+}
+
+function agendaClicar(data, hora){
+  openModalAtend();
+  setTimeout(()=>{
+    document.getElementById('atend-data').value = data;
+    if(hora) document.getElementById('atend-hora').value = hora;
+  }, 50);
 }
 
 // ── INIT ─────────────────────────────────────────────────
