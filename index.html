@@ -282,6 +282,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <select id="pay-status" onchange="renderPagamentos()">
             <option value="">Todos os status</option>
             <option value="pago">Pago</option>
+            <option value="parcial">Parcial</option>
             <option value="pendente">Pendente</option>
             <option value="atrasado">Atrasado</option>
             <option value="cancelado">Cancelado</option>
@@ -385,9 +386,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="form-group"><label>Horário</label><input type="time" id="atend-hora"></div>
       </div>
       <div class="fg3">
-        <div class="form-group"><label>Valor (R$) *</label><input type="number" id="atend-valor" min="0" step="0.01" placeholder="0,00"></div>
-        <div class="form-group">
-          <label>Método de pagamento</label>
+        <div class="form-group"><label>Valor da sessão (R$) *</label><input type="number" id="atend-valor" min="0" step="0.01" placeholder="0,00" oninput="calcSaldo()"></div>
+        <div class="form-group"><label>Valor recebido (R$)</label><input type="number" id="atend-recebido" min="0" step="0.01" placeholder="0,00" oninput="calcSaldo()"></div>
+        <div class="form-group"><label>Método de pagamento</label>
           <select id="atend-metodo">
             <option>Pix</option><option>Dinheiro</option><option>Cartão de crédito</option>
             <option>Cartão de débito</option><option>Transferência</option><option>Convênio</option><option>Outro</option>
@@ -397,10 +398,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <label>Status</label>
           <select id="atend-status">
             <option value="pago">Pago</option>
+            <option value="parcial">Parcial</option>
             <option value="pendente">Pendente</option>
             <option value="cancelado">Cancelado</option>
           </select>
         </div>
+      </div>
+      <div id="saldo-box" style="display:none;background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--amber-text);margin-bottom:4px">
+        <strong>Saldo restante: <span id="saldo-val">R$ 0,00</span></strong>
       </div>
       <div class="form-group">
         <label>Data de vencimento</label>
@@ -416,6 +421,32 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 </div>
 
 <!-- MODAL PACIENTE -->
+<!-- MODAL PAGAMENTO PACIENTE -->
+<div id="modal-ppag" class="modal-bg" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head">
+      <h3>Registrar pagamento</h3>
+      <button class="btn-ghost" style="padding:4px;border:none;background:none;cursor:pointer;color:var(--text2)" onclick="document.getElementById('modal-ppag').classList.remove('open')"><i class="ti ti-x" style="font-size:18px"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--green-light);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px">
+        <div style="font-size:13px;color:var(--text2)">Paciente</div>
+        <div style="font-weight:700;font-size:16px;color:var(--green-dark)" id="ppag-nome"></div>
+        <div style="font-size:13px;color:var(--text2);margin-top:4px">Saldo devedor: <strong style="color:var(--red)" id="ppag-saldo"></strong></div>
+      </div>
+      <div class="form-group">
+        <label>Valor recebido (R$) *</label>
+        <input type="number" id="ppag-valor" min="0.01" step="0.01" placeholder="0,00">
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">O valor será abatido das sessões mais antigas primeiro.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-ppag').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarPagamentoPaciente()"><i class="ti ti-check"></i> Confirmar pagamento</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-pac" class="modal-bg" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal">
     <div class="modal-head">
@@ -478,7 +509,7 @@ async function loadData(){
   }));
   atendimentos = (atends||[]).map(a => ({
     id: a.id, pacienteId: a.paciente_id, data: a.data||'', hora: a.hora||'',
-    valor: a.valor||0, metodo: a.metodo||'', status: a.status||'pendente',
+    valor: a.valor||0, valorRecebido: a.valor_recebido||0, metodo: a.metodo||'', status: a.status||'pendente',
     vencimento: a.vencimento||'', obs: a.obs||''
   }));
 }
@@ -494,7 +525,7 @@ async function dbSavePaciente(p){
 async function dbSaveAtend(a){
   const { error } = await _sb.from('atendimentos').upsert({
     id: a.id, paciente_id: a.pacienteId, data: a.data||null, hora: a.hora||null,
-    valor: a.valor||0, metodo: a.metodo||null, status: a.status||null,
+    valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
     vencimento: a.vencimento||null, obs: a.obs||null
   });
   if(error) throw error;
@@ -525,6 +556,11 @@ function diasAtraso(vencimento, status){
 
 function statusComVencimento(a){
   if(a.status==='pago'||a.status==='cancelado') return a.status;
+  if(a.status==='parcial'){
+    if(!a.vencimento) return 'parcial';
+    const diff = diasAtraso(a.vencimento, a.status);
+    return diff > 0 ? 'atrasado' : 'parcial';
+  }
   if(!a.vencimento) return a.status;
   const diff = diasAtraso(a.vencimento, a.status);
   if(diff > 0) return 'atrasado';
@@ -532,10 +568,10 @@ function statusComVencimento(a){
 }
 
 function badgeHtml(status, vencimento){
-  const s = status==='pendente'&&vencimento ? statusComVencimento({status,vencimento}) : status;
-  const map = {pago:'badge-pago',pendente:'badge-pendente',atrasado:'badge-atrasado',cancelado:'badge-cancelado'};
-  const ico = {pago:'ti-circle-check',pendente:'ti-clock',atrasado:'ti-alert-circle',cancelado:'ti-x'};
-  const label = {pago:'Pago',pendente:'Pendente',atrasado:'Atrasado',cancelado:'Cancelado'};
+  const s = (status==='pendente'||status==='parcial')&&vencimento ? statusComVencimento({status,vencimento}) : status;
+  const map = {pago:'badge-pago',pendente:'badge-pendente',atrasado:'badge-atrasado',cancelado:'badge-cancelado',parcial:'badge-pendente'};
+  const ico = {pago:'ti-circle-check',pendente:'ti-clock',atrasado:'ti-alert-circle',cancelado:'ti-x',parcial:'ti-clock-half-2'};
+  const label = {pago:'Pago',pendente:'Pendente',atrasado:'Atrasado',cancelado:'Cancelado',parcial:'Parcial'};
   return `<span class="badge ${map[s]||'badge-cancelado'}"><i class="ti ${ico[s]||'ti-minus'}"></i>${label[s]||s}</span>`;
 }
 
@@ -599,7 +635,11 @@ function renderDashboard(){
   const thisMonth = now.substring(0,7);
   const mesAtends = atendimentos.filter(a=>a.data&&a.data.startsWith(thisMonth));
   const totalMes = mesAtends.reduce((s,a)=>s+parseFloat(a.valor||0),0);
-  const recebidoMes = mesAtends.filter(a=>a.status==='pago').reduce((s,a)=>s+parseFloat(a.valor||0),0);
+  const recebidoMes = mesAtends.reduce((s,a)=>{
+    if(a.status==='pago') return s+parseFloat(a.valor||0);
+    if(a.status==='parcial') return s+parseFloat(a.valorRecebido||0);
+    return s;
+  },0);
   const pendentes = atendimentos.filter(a=>statusComVencimento(a)==='pendente');
   const atrasados = atendimentos.filter(a=>statusComVencimento(a)==='atrasado');
   const totalPend = [...pendentes,...atrasados].reduce((s,a)=>s+parseFloat(a.valor||0),0);
@@ -738,7 +778,7 @@ function renderPagamentos(){
   if(sta) list=list.filter(a=>statusComVencimento(a)===sta);
   list.sort((a,b)=>{
     const sa=statusComVencimento(a),sb=statusComVencimento(b);
-    const ord={atrasado:0,pendente:1,pago:2,cancelado:3};
+    const ord={atrasado:0,parcial:1,pendente:2,pago:3,cancelado:4};
     if(ord[sa]!==ord[sb]) return ord[sa]-ord[sb];
     return (a.vencimento||a.data||'').localeCompare(b.vencimento||b.data||'');
   });
@@ -758,7 +798,10 @@ function renderPagamentos(){
       <td>${a.vencimento?fmtData(a.vencimento):'<span style="color:var(--text3)">—</span>'}</td>
       <td>${situacaoChip(a)}</td>
       <td><span style="color:var(--text2)">${a.metodo||'—'}</span></td>
-      <td style="text-align:right;font-weight:600">${brl(a.valor)}</td>
+      <td style="text-align:right;font-weight:600">
+        ${brl(a.valor)}
+        ${a.valorRecebido>0&&a.valorRecebido<a.valor?`<div style="font-size:11px;color:var(--amber);font-weight:500">Recebido: ${brl(a.valorRecebido)}</div><div style="font-size:11px;color:var(--red);font-weight:500">Saldo: ${brl(a.valor-a.valorRecebido)}</div>`:''}
+      </td>
       <td>${badgeHtml(statusComVencimento(a))}</td>
       <td style="text-align:right">
         <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
@@ -795,15 +838,27 @@ function renderAtendimentos(){
 }
 
 // ── PACIENTES ────────────────────────────────────────────
+function saldoPaciente(pid){
+  return atendimentos
+    .filter(a=>a.pacienteId===pid)
+    .filter(a=>['pendente','parcial','atrasado'].includes(statusComVencimento(a)))
+    .reduce((s,a)=>s+parseFloat(a.valor||0)-parseFloat(a.valorRecebido||0),0);
+}
+
 function renderPacientes(){
   const el=document.getElementById('pac-list');
   if(!pacientes.length){el.innerHTML='<div class="empty"><i class="ti ti-users"></i><p>Nenhum paciente cadastrado</p></div>';return;}
   el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
     <table class="pay-table">
-      <thead><tr><th>Paciente</th><th>Telefone</th><th>Endereço</th><th>Diagnóstico</th><th style="text-align:right">Sessões</th><th style="text-align:right">Total recebido</th><th></th></tr></thead>
+      <thead><tr><th>Paciente</th><th>Telefone</th><th>Endereço</th><th>Diagnóstico</th><th style="text-align:right">Sessões</th><th style="text-align:right">Total recebido</th><th style="text-align:right">Saldo devedor</th><th></th></tr></thead>
       <tbody>${pacientes.map(p=>{
         const sess=atendimentos.filter(a=>a.pacienteId===p.id);
-        const totalPago=sess.filter(a=>a.status==='pago').reduce((s,a)=>s+parseFloat(a.valor||0),0);
+        const totalPago=sess.reduce((s,a)=>{
+          if(a.status==='pago') return s+parseFloat(a.valor||0);
+          if(a.status==='parcial') return s+parseFloat(a.valorRecebido||0);
+          return s;
+        },0);
+        const saldo=saldoPaciente(p.id);
         return `<tr>
           <td><div style="display:flex;align-items:center;gap:10px"><div class="pav">${iniciais(p.nome)}</div><div><div style="font-weight:600">${p.nome}</div><div style="font-size:12px;color:var(--text3)">${p.nasc?calcIdade(p.nasc)+' anos':''}</div></div></div></td>
           <td>${p.tel||'—'}</td>
@@ -811,6 +866,10 @@ function renderPacientes(){
           <td style="color:var(--text2)">${p.diag||'—'}</td>
           <td style="text-align:right;font-weight:500">${sess.length}</td>
           <td style="text-align:right;font-weight:600;color:var(--green)">${brl(totalPago)}</td>
+          <td style="text-align:right;font-weight:600;color:${saldo>0?'var(--red)':'var(--text3)'}">
+            ${saldo>0?brl(saldo):'—'}
+            ${saldo>0?`<div style="margin-top:4px"><button class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="abrirPagamentoPaciente('${p.id}')"><i class="ti ti-cash"></i> Pagar</button></div>`:''}
+          </td>
           <td style="text-align:right">
             <button class="btn btn-ghost btn-sm" onclick="verPaciente('${p.id}')"><i class="ti ti-eye"></i></button>
             <button class="btn btn-ghost btn-sm" onclick="editPaciente('${p.id}')"><i class="ti ti-edit"></i></button>
@@ -819,6 +878,53 @@ function renderPacientes(){
         </tr>`;}).join('')}
       </tbody>
     </table></div>`;
+}
+
+function abrirPagamentoPaciente(pid){
+  const p=pacientes.find(x=>x.id===pid);
+  const saldo=saldoPaciente(pid);
+  document.getElementById('ppag-nome').textContent=p.nome;
+  document.getElementById('ppag-saldo').textContent=brl(saldo);
+  document.getElementById('ppag-valor').value='';
+  document.getElementById('ppag-valor').max=saldo;
+  document.getElementById('modal-ppag').dataset.pid=pid;
+  document.getElementById('modal-ppag').classList.add('open');
+}
+
+async function confirmarPagamentoPaciente(){
+  const modal=document.getElementById('modal-ppag');
+  const pid=modal.dataset.pid;
+  const valor=parseFloat(document.getElementById('ppag-valor').value)||0;
+  if(!valor||valor<=0){toast('Informe o valor recebido','error');return;}
+
+  // pegar sessões pendentes/parciais/atrasadas ordenadas por data (mais antigas primeiro)
+  const pendentes=atendimentos
+    .filter(a=>a.pacienteId===pid&&['pendente','parcial','atrasado'].includes(statusComVencimento(a)))
+    .sort((a,b)=>a.data.localeCompare(b.data));
+
+  let restante=valor;
+  try{
+    for(const a of pendentes){
+      if(restante<=0) break;
+      const saldoSessao=parseFloat(a.valor||0)-parseFloat(a.valorRecebido||0);
+      if(restante>=saldoSessao){
+        a.valorRecebido=parseFloat(a.valor||0);
+        a.status='pago';
+        restante-=saldoSessao;
+      } else {
+        a.valorRecebido=(parseFloat(a.valorRecebido||0)+restante);
+        a.status='parcial';
+        restante=0;
+      }
+      await dbSaveAtend(a);
+    }
+    modal.classList.remove('open');
+    toast('Pagamento registrado com sucesso!');
+    renderDashboard();
+    renderPacientes();
+  }catch(e){
+    toast('Erro ao salvar: '+e.message,'error');
+  }
 }
 
 function calcIdade(nasc){
@@ -902,6 +1008,7 @@ function openModalAtend(id){
     document.getElementById('atend-data').value=a.data;
     document.getElementById('atend-hora').value=a.hora||'';
     document.getElementById('atend-valor').value=a.valor||'';
+    document.getElementById('atend-recebido').value=a.valorRecebido||'';
     document.getElementById('atend-metodo').value=a.metodo||'Pix';
     document.getElementById('atend-status').value=a.status||'pago';
     document.getElementById('atend-vencimento').value=a.vencimento||'';
@@ -912,14 +1019,28 @@ function openModalAtend(id){
     document.getElementById('atend-hora').value='';
     const p=pacientes.find(x=>x.id===sel.value);
     document.getElementById('atend-valor').value=p?.valorPadrao||'';
+    document.getElementById('atend-recebido').value='';
     document.getElementById('atend-metodo').value='Pix';
     document.getElementById('atend-status').value='pago';
     document.getElementById('atend-vencimento').value='';
     document.getElementById('atend-obs').value='';
   }
+  calcSaldo();
   document.getElementById('modal-atend').classList.add('open');
 }
 
+function calcSaldo(){
+  const valor=parseFloat(document.getElementById('atend-valor').value)||0;
+  const recebido=parseFloat(document.getElementById('atend-recebido').value)||0;
+  const saldo=valor-recebido;
+  const box=document.getElementById('saldo-box');
+  if(recebido>0&&saldo>0){
+    box.style.display='block';
+    document.getElementById('saldo-val').textContent=brl(saldo);
+  } else {
+    box.style.display='none';
+  }
+}
 function preencherValorPadrao(){
   if(editAtendId) return;
   const p=pacientes.find(x=>x.id===document.getElementById('atend-paciente').value);
@@ -933,13 +1054,21 @@ async function salvarAtend(){
   const data=document.getElementById('atend-data').value;
   const valor=document.getElementById('atend-valor').value;
   if(!pid||!data||!valor){toast('Preencha os campos obrigatórios (*)','error');return;}
+  const recebido=parseFloat(document.getElementById('atend-recebido').value)||0;
+  const valorNum=parseFloat(valor);
+  let statusAuto=document.getElementById('atend-status').value;
+  if(statusAuto!=='cancelado'){
+    if(recebido>=valorNum&&valorNum>0) statusAuto='pago';
+    else if(recebido>0) statusAuto='parcial';
+  }
   const obj={
     id:editAtendId||Date.now().toString(),
     pacienteId:pid,data,
     hora:document.getElementById('atend-hora').value,
-    valor:parseFloat(valor),
+    valor:valorNum,
+    valorRecebido:recebido,
     metodo:document.getElementById('atend-metodo').value,
-    status:document.getElementById('atend-status').value,
+    status:statusAuto,
     vencimento:document.getElementById('atend-vencimento').value,
     obs:document.getElementById('atend-obs').value
   };
