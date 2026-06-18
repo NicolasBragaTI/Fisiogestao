@@ -205,6 +205,33 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 </head>
 <body>
 
+<div id="auth-screen" style="display:flex;position:fixed;inset:0;background:var(--bg);z-index:1000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);padding:36px 32px;width:100%;max-width:420px">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="width:52px;height:52px;background:var(--green);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px"><i class="ti ti-activity-heartbeat" style="font-size:26px;color:#fff"></i></div>
+      <div style="font-size:22px;font-weight:700;color:var(--green-dark);letter-spacing:-.02em">FisioGestão</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:2px">Gestão de atendimentos domiciliares</div>
+    </div>
+    <div style="display:flex;border-radius:8px;overflow:hidden;margin-bottom:24px">
+      <button id="tab-login" onclick="switchAuthTab('login')" style="flex:1;padding:10px;border:none;background:var(--green);color:#fff;font-weight:600;cursor:pointer;border-radius:8px 0 0 8px;font-family:inherit;font-size:14px">Entrar</button>
+      <button id="tab-register" onclick="switchAuthTab('register')" style="flex:1;padding:10px;border:none;background:var(--bg);color:var(--text2);cursor:pointer;border-radius:0 8px 8px 0;font-family:inherit;font-size:14px">Criar conta</button>
+    </div>
+    <div id="auth-login">
+      <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn btn-primary" onclick="doLogin()" style="width:100%;margin-top:8px;padding:12px;font-size:15px"><i class="ti ti-login"></i> Entrar</button>
+    </div>
+    <div id="auth-register" style="display:none">
+      <div class="form-group"><label>Nome completo</label><input type="text" id="reg-nome" placeholder="Seu nome"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="seu@email.com"></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="reg-password" placeholder="Mínimo 6 caracteres"></div>
+      <div class="form-group"><label>Confirmar senha</label><input type="password" id="reg-confirm" placeholder="Repita a senha" onkeydown="if(event.key==='Enter')doRegister()"></div>
+      <button class="btn btn-primary" onclick="doRegister()" style="width:100%;margin-top:8px;padding:12px;font-size:15px"><i class="ti ti-user-plus"></i> Criar conta</button>
+    </div>
+    <div id="auth-error" style="margin-top:14px;font-size:13px;color:var(--red);text-align:center;min-height:18px"></div>
+  </div>
+</div>
+
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
@@ -222,9 +249,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="nav-item" onclick="navTo('pagamentos',this)"><i class="ti ti-credit-card"></i> Pagamentos</button>
     <div class="nav-section">Relatórios</div>
     <button class="nav-item" onclick="navTo('relatorio',this)"><i class="ti ti-chart-bar"></i> Relatório mensal</button>
+    <button id="nav-cadastros" class="nav-item" onclick="navTo('cadastros',this)" style="display:none"><i class="ti ti-user-plus"></i> Cadastros</button>
   </nav>
   <div class="sidebar-footer">
-    <button class="nav-item" style="color:var(--text3)"><i class="ti ti-settings"></i> Configurações</button>
+    <div id="sidebar-user" style="padding:8px 12px;margin-bottom:6px;border-radius:var(--radius);background:var(--green-light);min-height:36px"></div>
+    <button id="nav-admin" class="nav-item" onclick="navTo('admin',this)" style="display:none"><i class="ti ti-shield"></i> Admin</button>
+    <button class="nav-item" onclick="doLogout()" style="color:var(--red)"><i class="ti ti-logout"></i> Sair</button>
   </div>
 </aside>
 
@@ -291,6 +321,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <h2>Pagamentos</h2>
         <button class="btn btn-primary" onclick="openModalAtend()"><i class="ti ti-plus"></i> Novo atendimento</button>
       </div>
+      <div class="metrics" id="pay-metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px"></div>
       <div class="card" style="margin-bottom:0">
         <div class="filters">
           <select id="pay-mes" onchange="renderPagamentos()"></select>
@@ -304,6 +335,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
             <option value="cancelado">Cancelado</option>
           </select>
           <div class="filter-spacer"></div>
+          <button id="pay-btn-pagar" class="btn btn-sm" style="display:none;background:var(--green);color:#fff;border:none" onclick="abrirPagamentoPaciente(document.getElementById('pay-paciente').value)"><i class="ti ti-cash"></i> Registrar pagamento</button>
           <button class="btn btn-outline btn-sm" onclick="exportarCSV()"><i class="ti ti-download"></i> Exportar CSV</button>
         </div>
         <div style="overflow-x:auto">
@@ -313,6 +345,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
                 <th>Paciente</th>
                 <th>Data atend.</th>
                 <th>Vencimento</th>
+                <th>Pago em</th>
                 <th>Situação</th>
                 <th>Método</th>
                 <th class="text-right" style="text-align:right">Valor</th>
@@ -401,6 +434,76 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           </table>
         </div>
         <div id="rel-empty" class="empty" style="display:none"><i class="ti ti-file-off"></i><p>Sem atendimentos neste mês</p></div>
+      </div>
+    </div>
+
+    <!-- ===== CADASTROS (admin only) ===== -->
+    <div class="page" id="page-cadastros">
+      <div class="section-hdr">
+        <h2>Cadastros de usuários</h2>
+        <button class="btn btn-outline" onclick="renderCadastros()"><i class="ti ti-refresh"></i> Atualizar</button>
+      </div>
+      <div id="cadastros-stats" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px"></div>
+      <div id="cadastros-list"></div>
+    </div>
+
+    <!-- ===== ADMIN ===== -->
+    <div class="page" id="page-admin">
+      <div class="section-hdr">
+        <h2>Controle de acesso</h2>
+        <button class="btn btn-outline" onclick="renderAdmin()"><i class="ti ti-refresh"></i> Atualizar</button>
+      </div>
+      <!-- ABAS ADMIN -->
+      <div style="display:flex;gap:4px;margin-bottom:20px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;width:fit-content">
+        <button id="atab-usuarios" onclick="setAdminTab('usuarios')" class="btn btn-sm" style="padding:6px 18px;font-size:13px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer">
+          <i class="ti ti-users"></i> Usuários
+        </button>
+        <button id="atab-info" onclick="setAdminTab('info')" class="btn btn-sm" style="padding:6px 18px;font-size:13px;background:transparent;color:var(--text2);border:none;border-radius:6px;cursor:pointer">
+          <i class="ti ti-info-circle"></i> Informações
+        </button>
+      </div>
+      <!-- ABA USUÁRIOS -->
+      <div id="admin-tab-usuarios">
+        <div id="admin-list"></div>
+      </div>
+      <!-- ABA INFORMAÇÕES -->
+      <div id="admin-tab-info" style="display:none">
+        <div class="card" style="max-width:600px">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--green-light);border-radius:var(--radius);border:1px solid var(--border2)">
+              <i class="ti ti-database" style="font-size:24px;color:var(--green)"></i>
+              <div>
+                <div style="font-weight:600;color:var(--text)">Banco de dados</div>
+                <div style="font-size:12px;color:var(--text2)">Supabase PostgreSQL — igwkhdsywagbmqlispil.supabase.co</div>
+              </div>
+              <span style="margin-left:auto;background:var(--green);color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600">Conectado</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--green-light);border-radius:var(--radius);border:1px solid var(--border2)">
+              <i class="ti ti-lock" style="font-size:24px;color:var(--green)"></i>
+              <div>
+                <div style="font-weight:600;color:var(--text)">Autenticação</div>
+                <div style="font-size:12px;color:var(--text2)">Supabase Auth — email e senha com controle de acesso por papel</div>
+              </div>
+              <span style="margin-left:auto;background:var(--green);color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600">Ativo</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--green-light);border-radius:var(--radius);border:1px solid var(--border2)">
+              <i class="ti ti-cloud" style="font-size:24px;color:var(--green)"></i>
+              <div>
+                <div style="font-weight:600;color:var(--text)">Hospedagem</div>
+                <div style="font-size:12px;color:var(--text2)">Vercel — fisiogestao.vercel.app</div>
+              </div>
+              <span style="margin-left:auto;background:var(--green);color:#fff;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600">Online</span>
+            </div>
+            <div style="padding:14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)">
+              <div style="font-weight:600;color:var(--text);margin-bottom:8px"><i class="ti ti-shield-check"></i> Papéis de acesso</div>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+                <div style="display:flex;align-items:center;gap:8px"><span style="background:var(--green);color:#fff;border-radius:20px;padding:1px 10px;font-size:11px;font-weight:600">Admin</span> Acesso total — gerencia usuários, dados e configurações</div>
+                <div style="display:flex;align-items:center;gap:8px"><span style="background:var(--blue);color:#fff;border-radius:20px;padding:1px 10px;font-size:11px;font-weight:600">Usuário</span> Acesso padrão — visualiza e edita pacientes e atendimentos</div>
+                <div style="display:flex;align-items:center;gap:8px"><span style="background:var(--red);color:#fff;border-radius:20px;padding:1px 10px;font-size:11px;font-weight:600">Desativado</span> Sem acesso — bloqueado ao tentar fazer login</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -526,8 +629,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 // ── SUPABASE ─────────────────────────────────────────────
 const _sb = supabase.createClient(
   'https://igwkhdsywagbmqlispil.supabase.co',
-  'sb_publishable_lzLWVm3zOcnqVS3nTEpabw_7QE3OEAi'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlnd2toZHN5d2FnYm1xbGlzcGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODQ1MzgsImV4cCI6MjA5NzI2MDUzOH0.ZO3DWdJMCYwAC3fam79IKEaA8IabVINwDUBVpQr_v_8'
 );
+// _sbAdmin removido — operações admin agora usam funções PostgreSQL SECURITY DEFINER
 
 // ── DATA ────────────────────────────────────────────────
 let pacientes = [];
@@ -548,25 +652,51 @@ async function loadData(){
   atendimentos = (atends||[]).map(a => ({
     id: a.id, pacienteId: a.paciente_id, data: a.data||'', hora: a.hora||'', horaFim: a.hora_fim||'',
     valor: a.valor||0, valorRecebido: a.valor_recebido||0, metodo: a.metodo||'', status: a.status||'pendente',
-    vencimento: a.vencimento||'', obs: a.obs||''
+    vencimento: a.vencimento||'', obs: a.obs||'', dataPagamento: a.data_pagamento||''
   }));
 }
 
-async function dbSavePaciente(p){
-  const { error } = await _sb.from('pacientes').upsert({
-    id: p.id, nome: p.nome, tel: p.tel||null, nasc: p.nasc||null,
-    end_local: p.end||null, diag: p.diag||null, valor_padrao: p.valorPadrao||null, obs: p.obs||null
-  });
-  if(error) throw error;
+async function dbSavePaciente(p, isNew){
+  if(isNew){
+    const { data, error } = await _sb.from('pacientes').insert({
+      id: p.id, nome: p.nome, tel: p.tel||null, nasc: p.nasc||null,
+      end_local: p.end||null, diag: p.diag||null, valor_padrao: p.valorPadrao||null, obs: p.obs||null,
+      user_id: currentUser.id
+    }).select('id');
+    if(error) throw error;
+    if(!data||!data.length) throw new Error('Sem permissão para criar paciente.');
+  } else {
+    const { data, error } = await _sb.from('pacientes').update({
+      nome: p.nome, tel: p.tel||null, nasc: p.nasc||null,
+      end_local: p.end||null, diag: p.diag||null, valor_padrao: p.valorPadrao||null, obs: p.obs||null
+    }).eq('id', p.id).eq('user_id', currentUser.id).select('id');
+    if(error) throw error;
+    if(!data||!data.length) throw new Error('Sem permissão para editar este paciente.');
+  }
 }
 
-async function dbSaveAtend(a){
-  const { error } = await _sb.from('atendimentos').upsert({
-    id: a.id, paciente_id: a.pacienteId, data: a.data||null, hora: a.hora||null, hora_fim: a.horaFim||null,
-    valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
-    vencimento: a.vencimento||null, obs: a.obs||null
-  });
-  if(error) throw error;
+async function dbSaveAtend(a, isNew){
+  const valor = parseFloat(a.valor)||0;
+  const valorRecebido = parseFloat(a.valorRecebido)||0;
+  if(valor < 0 || valorRecebido < 0) throw new Error('Valores financeiros não podem ser negativos.');
+  if(valorRecebido > valor + 0.01) throw new Error('Valor recebido não pode superar o valor da sessão.');
+  if(isNew){
+    const { data, error } = await _sb.from('atendimentos').insert({
+      id: a.id, paciente_id: a.pacienteId, data: a.data||null, hora: a.hora||null, hora_fim: a.horaFim||null,
+      valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
+      vencimento: a.vencimento||null, obs: a.obs||null, data_pagamento: a.dataPagamento||null, user_id: currentUser.id
+    }).select('id');
+    if(error) throw error;
+    if(!data||!data.length) throw new Error('Sem permissão para criar atendimento.');
+  } else {
+    const { data, error } = await _sb.from('atendimentos').update({
+      paciente_id: a.pacienteId, data: a.data||null, hora: a.hora||null, hora_fim: a.horaFim||null,
+      valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
+      vencimento: a.vencimento||null, obs: a.obs||null, data_pagamento: a.dataPagamento||null
+    }).eq('id', a.id).eq('user_id', currentUser.id).select('id');
+    if(error) throw error;
+    if(!data||!data.length) throw new Error('Sem permissão para editar este atendimento.');
+  }
 }
 
 async function dbDeletePaciente(id){
@@ -580,6 +710,7 @@ async function dbDeleteAtend(id){
 
 // ── HELPERS ─────────────────────────────────────────────
 const brl = v => 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
 const fmtData = d => { if(!d) return '—'; const [y,m,dd]=d.split('-'); return `${dd}/${m}/${y}`; };
 const iniciais = n => n.split(' ').slice(0,2).map(x=>x[0]).join('').toUpperCase();
 const nomePac = id => { const p=pacientes.find(x=>x.id===id); return p?p.nome:'—'; };
@@ -644,7 +775,12 @@ function closeSidebar(){
   document.querySelector('.sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
 }
-function navTo(page, btn){
+async function navTo(page, btn){
+  const adminPages = ['admin','cadastros'];
+  if(adminPages.includes(page) && currentProfile?.role !== 'admin'){
+    toast('Acesso restrito ao administrador.', 'error');
+    return;
+  }
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -652,15 +788,20 @@ function navTo(page, btn){
   closeSidebar();
   const titles={
     'visao-geral':'Visão geral','pagamentos':'Pagamentos',
-    'atendimentos':'Atendimentos','pacientes':'Pacientes','relatorio':'Relatório mensal','agenda':'Agenda'
+    'atendimentos':'Atendimentos','pacientes':'Pacientes','relatorio':'Relatório mensal','agenda':'Agenda',
+    'admin':'Controle de acesso','cadastros':'Cadastros de usuários'
   };
   document.getElementById('page-title').textContent=titles[page]||page;
+  const dataPages=['visao-geral','pagamentos','atendimentos','pacientes','relatorio'];
+  if(dataPages.includes(page)) await loadData();
   if(page==='visao-geral') renderDashboard();
   if(page==='pagamentos'){populatePayFilters();renderPagamentos();}
   if(page==='atendimentos'){populateAtFilters();renderAtendimentos();}
   if(page==='pacientes') renderPacientes();
   if(page==='relatorio'){populateRelMes();renderRelatorio();}
   if(page==='agenda'){semanaAtual();}
+  if(page==='admin') renderAdmin();
+  if(page==='cadastros') renderCadastros();
 }
 
 function navToLink(page){
@@ -722,7 +863,7 @@ function renderDashboard(){
         const cls=s==='atrasado'?'red':s==='pendente'?'amber':'';
         return `<div class="pending-item">
           <div class="pav ${cls}">${iniciais(nomePac(a.pacienteId))}</div>
-          <div><div class="pi-name">${nomePac(a.pacienteId)}</div><div class="pi-sub">${fmtData(a.data)} · ${a.metodo||'—'}</div></div>
+          <div><div class="pi-name">${esc(nomePac(a.pacienteId))}</div><div class="pi-sub">${fmtData(a.data)} · ${a.metodo||'—'}</div></div>
           <div class="pi-val ${cls==='red'?'late':cls==='amber'?'soon':''}">${brl(a.valor)}</div>
         </div>`;}).join('')
     : '<div class="empty" style="padding:1.5rem"><p>Sem atendimentos</p></div>';
@@ -735,7 +876,7 @@ function renderDashboard(){
         const cls=s==='atrasado'?'red':'amber';
         return `<div class="pending-item">
           <div class="pav ${cls}">${iniciais(nomePac(a.pacienteId))}</div>
-          <div><div class="pi-name">${nomePac(a.pacienteId)}</div><div class="pi-sub">${situacaoChip(a)}</div></div>
+          <div><div class="pi-name">${esc(nomePac(a.pacienteId))}</div><div class="pi-sub">${situacaoChip(a)}</div></div>
           <div class="pi-val ${cls==='red'?'late':'soon'}">${brl(a.valor)}</div>
         </div>`;}).join('')
     : '<div class="empty" style="padding:1.5rem"><i class="ti ti-circle-check" style="font-size:28px;color:var(--green);opacity:0.6;display:block;margin-bottom:6px"></i><p>Nenhum pagamento pendente</p></div>';
@@ -792,7 +933,7 @@ function populatePayFilters(){
   if(cur) ms.value=cur;
   const pp=document.getElementById('pay-paciente');
   const curP=pp.value;
-  pp.innerHTML='<option value="">Todos os pacientes</option>'+pacientes.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  pp.innerHTML='<option value="">Todos os pacientes</option>'+pacientes.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('');
   if(curP) pp.value=curP;
 }
 
@@ -803,7 +944,7 @@ function populateAtFilters(){
   if(cur) ms.value=cur;
   const pp=document.getElementById('at-paciente');
   const curP=pp.value;
-  pp.innerHTML='<option value="">Todos os pacientes</option>'+pacientes.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  pp.innerHTML='<option value="">Todos os pacientes</option>'+pacientes.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('');
   if(curP) pp.value=curP;
 }
 
@@ -815,6 +956,24 @@ function renderPagamentos(){
   if(mes) list=list.filter(a=>a.data&&a.data.startsWith(mes));
   if(pid) list=list.filter(a=>a.pacienteId===pid);
   if(sta) list=list.filter(a=>statusComVencimento(a)===sta);
+
+  // métricas (calculadas antes dos filtros de status, mas com filtros de mês/paciente)
+  const base=[...atendimentos].filter(a=>(!mes||a.data?.startsWith(mes))&&(!pid||a.pacienteId===pid));
+  const pendente=base.filter(a=>['pendente','parcial','atrasado'].includes(statusComVencimento(a)))
+    .reduce((s,a)=>s+parseFloat(a.valor||0)-parseFloat(a.valorRecebido||0),0);
+  const recebido=base.reduce((s,a)=>{
+    if(a.status==='pago') return s+parseFloat(a.valor||0);
+    if(a.status==='parcial') return s+parseFloat(a.valorRecebido||0);
+    return s;
+  },0);
+  const atrasado=base.filter(a=>statusComVencimento(a)==='atrasado')
+    .reduce((s,a)=>s+parseFloat(a.valor||0)-parseFloat(a.valorRecebido||0),0);
+  document.getElementById('pay-metrics').innerHTML=`
+    <div class="metric-card amber"><div class="mc-label">Pendente acumulado</div><div class="mc-value" style="font-size:18px;color:var(--amber)">${brl(pendente)}</div></div>
+    <div class="metric-card green"><div class="mc-label">Total recebido</div><div class="mc-value" style="font-size:18px">${brl(recebido)}</div></div>
+    <div class="metric-card red"><div class="mc-label">Em atraso</div><div class="mc-value" style="font-size:18px;color:var(--red)">${brl(atrasado)}</div></div>`;
+  const btnPagar = document.getElementById('pay-btn-pagar');
+  btnPagar.style.display = (pid && pendente > 0) ? 'inline-flex' : 'none';
   list.sort((a,b)=>{
     const sa=statusComVencimento(a),sb=statusComVencimento(b);
     const ord={atrasado:0,parcial:1,pendente:2,pago:3,cancelado:4};
@@ -830,11 +989,12 @@ function renderPagamentos(){
       <td>
         <div style="display:flex;align-items:center;gap:8px">
           <div class="pav" style="width:30px;height:30px;font-size:10px">${iniciais(nomePac(a.pacienteId))}</div>
-          <span style="font-weight:500">${nomePac(a.pacienteId)}</span>
+          <span style="font-weight:500">${esc(nomePac(a.pacienteId))}</span>
         </div>
       </td>
       <td>${fmtData(a.data)}${a.hora?' <span style="color:var(--text3)">'+a.hora+'</span>':''}</td>
       <td>${a.vencimento?fmtData(a.vencimento):'<span style="color:var(--text3)">—</span>'}</td>
+      <td>${a.dataPagamento?`<span style="color:var(--green);font-weight:500">${fmtData(a.dataPagamento)}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
       <td>${situacaoChip(a)}</td>
       <td><span style="color:var(--text2)">${a.metodo||'—'}</span></td>
       <td style="text-align:right;font-weight:600">
@@ -862,7 +1022,7 @@ function renderAtendimentos(){
   empty.style.display='none';
   tbody.innerHTML=list.map(a=>`
     <tr>
-      <td><div style="display:flex;align-items:center;gap:8px"><div class="pav" style="width:30px;height:30px;font-size:10px">${iniciais(nomePac(a.pacienteId))}</div><span style="font-weight:500">${nomePac(a.pacienteId)}</span></div></td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="pav" style="width:30px;height:30px;font-size:10px">${iniciais(nomePac(a.pacienteId))}</div><span style="font-weight:500">${esc(nomePac(a.pacienteId))}</span></div></td>
       <td>${fmtData(a.data)}</td>
       <td>${a.hora||'<span style="color:var(--text3)">—</span>'}</td>
       <td>${a.metodo||'—'}</td>
@@ -889,7 +1049,7 @@ function renderPacientes(){
   if(!pacientes.length){el.innerHTML='<div class="empty"><i class="ti ti-users"></i><p>Nenhum paciente cadastrado</p></div>';return;}
   el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
     <table class="pay-table">
-      <thead><tr><th>Paciente</th><th>Telefone</th><th>Endereço</th><th>Diagnóstico</th><th style="text-align:right">Sessões</th><th style="text-align:right">Total recebido</th><th style="text-align:right">Saldo devedor</th><th></th></tr></thead>
+      <thead><tr><th>Paciente</th><th>Diagnóstico</th><th style="text-align:right">Valor/Sessão</th><th style="text-align:right">Sessões acumuladas</th><th>Telefone</th><th></th></tr></thead>
       <tbody>${pacientes.map(p=>{
         const sess=atendimentos.filter(a=>a.pacienteId===p.id);
         const totalPago=sess.reduce((s,a)=>{
@@ -899,16 +1059,11 @@ function renderPacientes(){
         },0);
         const saldo=saldoPaciente(p.id);
         return `<tr>
-          <td><div style="display:flex;align-items:center;gap:10px"><div class="pav">${iniciais(p.nome)}</div><div><div style="font-weight:600">${p.nome}</div><div style="font-size:12px;color:var(--text3)">${p.nasc?calcIdade(p.nasc)+' anos':''}</div></div></div></td>
-          <td>${p.tel||'—'}</td>
-          <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">${p.end||'—'}</td>
-          <td style="color:var(--text2)">${p.diag||'—'}</td>
+          <td><div style="display:flex;align-items:center;gap:10px"><div class="pav">${iniciais(p.nome)}</div><div><div style="font-weight:600">${esc(p.nome)}</div><div style="font-size:12px;color:var(--text3)">${p.nasc?calcIdade(p.nasc)+' anos':''}</div></div></div></td>
+          <td style="color:var(--text2)">${esc(p.diag)||'—'}</td>
+          <td style="text-align:right;font-weight:600;color:var(--green)">${p.valorPadrao?brl(p.valorPadrao):'—'}</td>
           <td style="text-align:right;font-weight:500">${sess.length}</td>
-          <td style="text-align:right;font-weight:600;color:var(--green)">${brl(totalPago)}</td>
-          <td style="text-align:right;font-weight:600;color:${saldo>0?'var(--red)':'var(--text3)'}">
-            ${saldo>0?brl(saldo):'—'}
-            ${saldo>0?`<div style="margin-top:4px"><button class="btn btn-sm" style="font-size:11px;padding:3px 8px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer" onclick="abrirPagamentoPaciente('${p.id}')"><i class="ti ti-cash"></i> Pagar</button></div>`:''}
-          </td>
+          <td>${p.tel||'—'}</td>
           <td style="text-align:right">
             <button class="btn btn-ghost btn-sm" onclick="verPaciente('${p.id}')"><i class="ti ti-eye"></i></button>
             <button class="btn btn-ghost btn-sm" onclick="editPaciente('${p.id}')"><i class="ti ti-edit"></i></button>
@@ -949,18 +1104,24 @@ async function confirmarPagamentoPaciente(){
       if(restante>=saldoSessao){
         a.valorRecebido=parseFloat(a.valor||0);
         a.status='pago';
+        a.dataPagamento=today();
         restante-=saldoSessao;
       } else {
         a.valorRecebido=(parseFloat(a.valorRecebido||0)+restante);
         a.status='parcial';
+        a.dataPagamento=today();
         restante=0;
       }
-      await dbSaveAtend(a);
+      await dbSaveAtend(a, false);
     }
     modal.classList.remove('open');
     toast('Pagamento registrado com sucesso!');
+    await loadData();
     renderDashboard();
     renderPacientes();
+    const apPag=[...document.querySelectorAll('.page.active')][0]?.id;
+    if(apPag==='page-pagamentos'){populatePayFilters();renderPagamentos();}
+    if(apPag==='page-atendimentos'){populateAtFilters();renderAtendimentos();}
   }catch(e){
     toast('Erro ao salvar: '+e.message,'error');
   }
@@ -1002,7 +1163,7 @@ function renderRelatorio(){
     const p=pacientes.find(x=>x.id===a.pacienteId);
     return `<tr>
       <td>${fmtData(a.data)}${a.hora?' '+a.hora:''}</td>
-      <td style="font-weight:500">${nomePac(a.pacienteId)}</td>
+      <td style="font-weight:500">${esc(nomePac(a.pacienteId))}</td>
       <td style="color:var(--text2)">${p?p.end||'—':'—'}</td>
       <td>${a.metodo||'—'}</td>
       <td style="text-align:right;font-weight:600">${brl(a.valor)}</td>
@@ -1038,7 +1199,7 @@ function openModalAtend(id){
   editAtendId=id||null;
   document.getElementById('modal-atend-title').textContent=id?'Editar atendimento':'Novo atendimento';
   const sel=document.getElementById('atend-paciente');
-  sel.innerHTML=pacientes.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  sel.innerHTML=pacientes.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('');
   if(!pacientes.length){toast('Cadastre um paciente primeiro','error');return;}
   const t=today();
   if(id){
@@ -1115,16 +1276,16 @@ async function salvarAtend(){
     obs:document.getElementById('atend-obs').value
   };
   try{
-    await dbSaveAtend(obj);
-    if(editAtendId){const i=atendimentos.findIndex(x=>x.id===editAtendId);atendimentos[i]=obj;}
-    else atendimentos.push(obj);
+    await dbSaveAtend(obj, !editAtendId);
     document.getElementById('modal-atend').classList.remove('open');
     toast(editAtendId?'Atendimento atualizado!':'Atendimento registrado!');
     editAtendId=null;
+    await loadData();
     renderDashboard();
     const activePage=[...document.querySelectorAll('.page.active')][0]?.id;
     if(activePage==='page-pagamentos'){populatePayFilters();renderPagamentos();}
     if(activePage==='page-atendimentos'){populateAtFilters();renderAtendimentos();}
+    if(activePage==='page-pacientes') renderPacientes();
   } catch(e){ toast('Erro ao salvar: '+e.message,'error'); }
 }
 
@@ -1132,8 +1293,8 @@ async function delAtend(id){
   if(!confirm('Remover este atendimento?')) return;
   try{
     await dbDeleteAtend(id);
-    atendimentos=atendimentos.filter(a=>a.id!==id);
     toast('Atendimento removido.');
+    await loadData();
     renderDashboard();
     const activePage=[...document.querySelectorAll('.page.active')][0]?.id;
     if(activePage==='page-pagamentos'){populatePayFilters();renderPagamentos();}
@@ -1176,13 +1337,13 @@ async function salvarPaciente(){
     obs:document.getElementById('pac-obs').value
   };
   try{
-    await dbSavePaciente(obj);
-    if(editPacId){const i=pacientes.findIndex(x=>x.id===editPacId);pacientes[i]=obj;}
-    else pacientes.push(obj);
+    await dbSavePaciente(obj, !editPacId);
     document.getElementById('modal-pac').classList.remove('open');
     toast(editPacId?'Paciente atualizado!':'Paciente cadastrado!');
     editPacId=null;
+    await loadData();
     renderPacientes();
+    renderDashboard();
   } catch(e){ toast('Erro ao salvar: '+e.message,'error'); }
 }
 
@@ -1191,10 +1352,10 @@ async function delPaciente(id){
   if(!confirm(total?`Este paciente tem ${total} atendimento(s). Remover mesmo assim?`:'Remover este paciente?')) return;
   try{
     await dbDeletePaciente(id);
-    pacientes=pacientes.filter(p=>p.id!==id);
-    atendimentos=atendimentos.filter(a=>a.pacienteId!==id);
-    renderPacientes();
     toast('Paciente removido.');
+    await loadData();
+    renderPacientes();
+    renderDashboard();
   } catch(e){ toast('Erro ao remover: '+e.message,'error'); }
 }
 
@@ -1206,11 +1367,12 @@ function verPaciente(id){
   document.getElementById('ver-title').textContent=p.nome;
   document.getElementById('ver-body').innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-      ${p.tel?`<div><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Telefone</div><div style="font-size:14px">${p.tel}</div></div>`:''}
+      ${p.tel?`<div><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Telefone</div><div style="font-size:14px">${esc(p.tel)}</div></div>`:''}
       ${p.nasc?`<div><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Nascimento</div><div style="font-size:14px">${fmtData(p.nasc)} · ${calcIdade(p.nasc)} anos</div></div>`:''}
-      ${p.end?`<div style="grid-column:1/-1"><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Endereço</div><div style="font-size:14px">${p.end}</div></div>`:''}
-      ${p.diag?`<div style="grid-column:1/-1"><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Diagnóstico</div><div style="font-size:14px">${p.diag}</div></div>`:''}
-      ${p.obs?`<div style="grid-column:1/-1"><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Observações</div><div style="font-size:13px;color:var(--text2);line-height:1.5">${p.obs}</div></div>`:''}
+      ${p.end?`<div style="grid-column:1/-1"><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Endereço</div><div style="font-size:14px">${esc(p.end)}</div></div>`:''}
+      ${p.diag?`<div style="grid-column:1/-1"><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Diagnóstico</div><div style="font-size:14px">${esc(p.diag)}</div></div>`:''}
+      ${p.valorPadrao?`<div><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Valor/Sessão</div><div style="font-size:14px;font-weight:600;color:var(--green)">${brl(p.valorPadrao)}</div></div>`:''}
+      ${p.obs?`<div style="grid-column:1/-1"><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Observações</div><div style="font-size:13px;color:var(--text2);line-height:1.5">${esc(p.obs)}</div></div>`:''}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
       <div class="metric-card green" style="padding:12px 14px"><div class="mc-label">Sessões</div><div class="mc-value">${sess.length}</div></div>
@@ -1337,7 +1499,7 @@ function renderAgendaDiaria(){
           return `<div class="agenda-block" onclick="event.stopPropagation();editAtend('${a.id}')"
             style="top:${top+1}px;height:${height-2}px;background:${cor};color:#fff;border-left:4px solid ${borda}">
             <div style="font-size:11px;opacity:0.85">${a.hora}${a.horaFim?' – '+a.horaFim:''}</div>
-            <div style="font-weight:700;font-size:13px">${nomePac(a.pacienteId)}</div>
+            <div style="font-weight:700;font-size:13px">${esc(nomePac(a.pacienteId))}</div>
             ${a.obs?`<div style="font-size:11px;opacity:0.8;margin-top:2px">${a.obs}</div>`:''}
           </div>`;
         }).join('')}
@@ -1458,7 +1620,7 @@ function renderAgendaMensal(){
         const horaFim=a.horaFim?` – ${a.horaFim.substring(0,5)}`:'';
         return `<div onclick="event.stopPropagation();editAtend('${a.id}')"
           style="background:${cor};color:#fff;border-radius:4px;padding:2px 5px;font-size:10px;font-weight:600;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer"
-          title="${nomePac(a.pacienteId)} ${hora}${horaFim}">
+          title="${esc(nomePac(a.pacienteId))} ${hora}${horaFim}">
           ${hora} ${nome}${horaFim}
         </div>`;
       }).join('')}
@@ -1485,9 +1647,212 @@ function agendaClicar(data, hora){
   }, 50);
 }
 
+// ── AUTH ─────────────────────────────────────────────────
+let currentUser = null;
+let currentProfile = null;
+
+async function checkAuth() {
+  const { data: { session } } = await _sb.auth.getSession();
+  if (!session) { showAuthScreen(); return false; }
+  currentUser = session.user;
+  await loadProfile();
+  return true;
+}
+
+async function loadProfile() {
+  const { data } = await _sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  currentProfile = data;
+  const navAdmin = document.getElementById('nav-admin');
+  if (navAdmin) navAdmin.style.display = currentProfile?.role === 'admin' ? 'block' : 'none';
+  const navCadastros = document.getElementById('nav-cadastros');
+  if (navCadastros) navCadastros.style.display = currentProfile?.role === 'admin' ? 'flex' : 'none';
+  const footerEl = document.getElementById('sidebar-user');
+  if (footerEl) footerEl.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${currentProfile?.nome || currentUser.email}</div><div style="font-size:11px;color:var(--text3)">${currentUser.email}</div>`;
+}
+
+function showAuthScreen() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.querySelector('aside.sidebar').style.display = 'none';
+  document.querySelector('.main').style.display = 'none';
+  const ov = document.getElementById('sidebar-overlay');
+  if(ov) ov.style.display = 'none';
+}
+
+function hideAuthScreen() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.querySelector('aside.sidebar').style.display = '';
+  document.querySelector('.main').style.display = '';
+}
+
+function switchAuthTab(tab) {
+  document.getElementById('auth-login').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('auth-register').style.display = tab === 'register' ? 'block' : 'none';
+  const active = 'flex:1;padding:10px;border:none;background:var(--green);color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:14px';
+  const inactive = 'flex:1;padding:10px;border:none;background:var(--bg);color:var(--text2);cursor:pointer;font-family:inherit;font-size:14px';
+  document.getElementById('tab-login').style.cssText = (tab==='login'?active:inactive) + ';border-radius:8px 0 0 8px';
+  document.getElementById('tab-register').style.cssText = (tab==='register'?active:inactive) + ';border-radius:0 8px 8px 0';
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const err = document.getElementById('auth-error');
+  err.style.color = 'var(--red)'; err.textContent = '';
+  if (!email || !password) { err.textContent = 'Preencha email e senha.'; return; }
+  const { data, error } = await _sb.auth.signInWithPassword({ email, password });
+  if (error) { err.textContent = error.message === 'Invalid login credentials' ? 'Email ou senha incorretos.' : error.message; return; }
+  currentUser = data.user;
+  await loadProfile();
+  if (currentProfile?.role === 'disabled') {
+    await _sb.auth.signOut();
+    err.textContent = 'Acesso desativado. Entre em contato com o administrador.';
+    return;
+  }
+  hideAuthScreen();
+  await loadData();
+  renderDashboard();
+}
+
+async function doRegister() {
+  const nome = document.getElementById('reg-nome').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirm = document.getElementById('reg-confirm').value;
+  const err = document.getElementById('auth-error');
+  err.style.color = 'var(--red)'; err.textContent = '';
+  if (!nome || !email || !password) { err.textContent = 'Preencha todos os campos.'; return; }
+  if (password !== confirm) { err.textContent = 'As senhas não coincidem.'; return; }
+  if (password.length < 6) { err.textContent = 'A senha deve ter ao menos 6 caracteres.'; return; }
+  let data, error;
+  try {
+    const res = await _sb.auth.signUp({ email, password, options: { data: { nome } } });
+    data = res.data; error = res.error;
+    console.log('signUp result:', JSON.stringify(res, null, 2));
+  } catch(e) {
+    err.textContent = 'Erro JS: ' + e.message; return;
+  }
+  if (error) { err.textContent = error.message || error.status + ' ' + error.name || JSON.stringify(Object.entries(error)); return; }
+  if (data?.user) {
+    // auto-confirm enabled — log in directly
+    const { data: loginData, error: loginErr } = await _sb.auth.signInWithPassword({ email, password });
+    if (loginErr) { err.style.color='var(--green)'; err.textContent = 'Conta criada! Faça login para continuar.'; return; }
+    currentUser = loginData.user;
+    await loadProfile();
+    hideAuthScreen();
+    await loadData();
+    renderDashboard();
+  } else {
+    err.style.color = 'var(--green)';
+    err.textContent = 'Conta criada! Faça login para continuar.';
+  }
+}
+
+async function doLogout() {
+  await _sb.auth.signOut();
+  currentUser = null; currentProfile = null;
+  showAuthScreen();
+}
+
+async function renderCadastros() {
+  const list = document.getElementById('cadastros-list');
+  const stats = document.getElementById('cadastros-stats');
+  if (!list) return;
+  list.innerHTML = '<div style="color:var(--text3);padding:20px">Carregando...</div>';
+  const { data: profiles, error } = await _sb.rpc('admin_get_users');
+  if (error) { list.innerHTML = '<div style="color:var(--red);padding:20px">Erro: ' + error.message + '</div>'; return; }
+
+  const total = profiles.length;
+  const admins = profiles.filter(p => p.role === 'admin').length;
+  const ativos = profiles.filter(p => p.role === 'user').length;
+  const desativados = profiles.filter(p => p.role === 'disabled').length;
+  const hoje = new Date().toISOString().split('T')[0];
+  const novosHoje = profiles.filter(p => p.created_at && p.created_at.startsWith(hoje)).length;
+  const ultimos7 = profiles.filter(p => {
+    if (!p.created_at) return false;
+    const d = new Date(p.created_at);
+    return (new Date() - d) < 7*24*60*60*1000;
+  }).length;
+
+  stats.innerHTML = [
+    ['ti-users','Total',total,'var(--blue)'],
+    ['ti-user-check','Ativos',ativos,'var(--green)'],
+    ['ti-user-plus','Últimos 7 dias',ultimos7,'var(--green-dark)'],
+    ['ti-user-x','Desativados',desativados,'var(--red)'],
+    ['ti-shield','Admins',admins,'var(--text2)'],
+    ['ti-calendar-today','Hoje',novosHoje,'var(--blue)'],
+  ].map(([icon,label,val,color]) => `
+    <div class="card" style="padding:14px 18px;min-width:130px;flex:1">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <i class="ti ${icon}" style="color:${color};font-size:16px"></i>
+        <span style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em">${label}</span>
+      </div>
+      <div style="font-size:24px;font-weight:700;color:var(--text)">${val}</div>
+    </div>`).join('');
+
+  const roleLabel = { admin:'Admin', user:'Usuário', disabled:'Desativado' };
+  const roleColor = { admin:'var(--green)', user:'var(--blue)', disabled:'var(--red)' };
+
+  list.innerHTML = `<div class="card" style="padding:0;overflow:hidden">
+    <table class="pay-table">
+      <thead><tr><th>Nome</th><th>Email</th><th>Papel</th><th>Cadastrado em</th></tr></thead>
+      <tbody>${profiles.map(p => `<tr>
+        <td style="font-weight:500">${p.nome || '—'}</td>
+        <td style="color:var(--text2)">${p.email || '—'}</td>
+        <td><span style="background:${roleColor[p.role]||'var(--text3)'};color:#fff;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600">${roleLabel[p.role]||p.role}</span></td>
+        <td style="color:var(--text2)">${p.created_at ? new Date(p.created_at).toLocaleString('pt-BR') : '—'}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function setAdminTab(tab) {
+  ['usuarios','info'].forEach(t => {
+    document.getElementById('admin-tab-'+t).style.display = t===tab ? 'block' : 'none';
+    const btn = document.getElementById('atab-'+t);
+    btn.style.cssText = t===tab
+      ? 'padding:6px 18px;font-size:13px;background:var(--green);color:#fff;border:none;border-radius:6px;cursor:pointer'
+      : 'padding:6px 18px;font-size:13px;background:transparent;color:var(--text2);border:none;border-radius:6px;cursor:pointer';
+  });
+  if(tab==='usuarios') renderAdmin();
+}
+
+async function renderAdmin() {
+  const el = document.getElementById('admin-list');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--text3);padding:20px">Carregando...</div>';
+  const { data: profiles, error } = await _sb.rpc('admin_get_users');
+  if (error) { el.innerHTML = '<div style="color:var(--red);padding:20px">Erro: ' + error.message + '</div>'; return; }
+  if (!profiles || !profiles.length) { el.innerHTML = '<div class="empty"><i class="ti ti-users"></i><p>Nenhum usuário</p></div>'; return; }
+  const roleColors = { admin:'var(--green)', user:'var(--blue)', disabled:'var(--red)' };
+  const roleLabels = { admin:'Admin', user:'Usuário', disabled:'Desativado' };
+  el.innerHTML = `<div class="card" style="padding:0;overflow:hidden"><table class="pay-table"><thead><tr><th>Nome</th><th>Email</th><th>Papel</th><th>Criado em</th><th>Ações</th></tr></thead><tbody>${profiles.map(p=>`<tr>
+    <td style="font-weight:500">${esc(p.nome)||'—'}</td>
+    <td style="color:var(--text2)">${esc(p.email)||'—'}</td>
+    <td><span style="background:${roleColors[p.role]||'var(--text3)'};color:#fff;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600">${roleLabels[p.role]||p.role}</span></td>
+    <td style="color:var(--text2)">${p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'—'}</td>
+    <td>${p.id!==currentUser?.id?`<select onchange="changeUserRole('${p.id}',this.value)" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-family:inherit"><option value="">Alterar...</option><option value="admin">Admin</option><option value="user">Usuário</option><option value="disabled">Desativar</option></select>`:'<span style="font-size:12px;color:var(--text3)">Você</span>'}</td>
+  </tr>`).join('')}</tbody></table></div>`;
+}
+
+async function changeUserRole(userId, role) {
+  if (!role) return;
+  const { error } = await _sb.rpc('admin_update_role', { target_user_id: userId, new_role: role });
+  if (error) { toast('Erro: ' + error.message, 'error'); return; }
+  toast('Usuário alterado com sucesso!', 'success');
+  renderAdmin();
+}
+
 // ── INIT ─────────────────────────────────────────────────
 (async function init(){
   document.getElementById('page-title').textContent = 'Carregando...';
+  document.querySelector('aside.sidebar').style.display = 'none';
+  document.querySelector('.main').style.display = 'none';
+  _sb.auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_OUT') showAuthScreen();
+  });
+  const authed = await checkAuth();
+  if (!authed) return;
+  hideAuthScreen();
   await loadData();
   renderDashboard();
 })();
