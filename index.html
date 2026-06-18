@@ -52,7 +52,28 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .topbar-search i{color:var(--text3);font-size:15px}
 .topbar-btn{width:36px;height:36px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2)}
 .topbar-btn:hover{background:var(--bg)}
-.topbar-avatar{width:36px;height:36px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:#fff;cursor:pointer}
+.topbar-avatar{width:36px;height:36px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:#fff;cursor:pointer;user-select:none;position:relative}
+.topbar-avatar:hover{background:var(--green-dark)}
+
+/* USER PANEL DROPDOWN */
+.user-panel-wrap{position:relative}
+.user-panel{position:absolute;top:calc(100% + 10px);right:0;width:270px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 8px 32px rgba(0,0,0,0.14);z-index:9999;overflow:hidden;animation:fadeDown 0.15s ease}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.user-panel-hidden{display:none}
+.user-panel-header{background:var(--green);padding:24px 20px 20px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.user-panel-avatar-lg{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;border:3px solid rgba(255,255,255,0.4)}
+.user-panel-name{font-size:15px;font-weight:700;color:#fff;text-align:center;line-height:1.3}
+.user-panel-email{font-size:12px;color:rgba(255,255,255,0.75);text-align:center}
+.user-panel-body{padding:8px 0}
+.user-panel-item{display:flex;align-items:center;gap:12px;padding:11px 18px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:background 0.12s;border:none;background:transparent;width:100%;font-family:inherit;text-align:left}
+.user-panel-item i{font-size:18px;color:var(--text3)}
+.user-panel-item:hover{background:var(--bg);color:var(--text)}
+.user-panel-item:hover i{color:var(--green)}
+.user-panel-item.danger{color:var(--red)}
+.user-panel-item.danger i{color:var(--red)}
+.user-panel-item.danger:hover{background:var(--red-bg)}
+.user-panel-divider{height:1px;background:var(--border);margin:4px 0}
+
 .content{padding:24px 28px;flex:1}
 
 /* PAGE */
@@ -271,7 +292,22 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <input type="text" id="global-search" placeholder="Buscar paciente..." oninput="globalSearch()">
     </div>
     <button class="topbar-btn" title="Notificações"><i class="ti ti-bell"></i></button>
-    <div class="topbar-avatar" title="Perfil">N</div>
+    <div class="user-panel-wrap">
+      <div class="topbar-avatar" id="topbar-avatar" onclick="toggleUserPanel()" title="Meu perfil">?</div>
+      <div class="user-panel user-panel-hidden" id="user-panel">
+        <div class="user-panel-header">
+          <div class="user-panel-avatar-lg" id="user-panel-avatar-lg">?</div>
+          <div class="user-panel-name" id="user-panel-name">—</div>
+          <div class="user-panel-email" id="user-panel-email">—</div>
+        </div>
+        <div class="user-panel-body">
+          <button class="user-panel-item" onclick="closeUserPanel();navTo('perfil',null)"><i class="ti ti-user"></i> Meu perfil</button>
+          <button class="user-panel-item" onclick="closeUserPanel();openAlterarSenha()"><i class="ti ti-lock"></i> Alterar senha</button>
+          <div class="user-panel-divider"></div>
+          <button class="user-panel-item danger" onclick="doLogout()"><i class="ti ti-logout"></i> Sair do sistema</button>
+        </div>
+      </div>
+    </div>
   </header>
 
   <div class="content">
@@ -506,6 +542,95 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         </div>
       </div>
     </div>
+
+    <!-- ===== MEU PERFIL ===== -->
+    <div class="page" id="page-perfil">
+      <div class="section-hdr" style="margin-bottom:20px">
+        <h2>Meu perfil</h2>
+      </div>
+
+      <!-- ABAS -->
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px">
+        <button id="ptab-btn-geral" onclick="setPerfilTab('geral')" style="padding:10px 22px;font-size:13px;font-weight:600;font-family:inherit;background:transparent;border:none;border-bottom:2px solid var(--green);margin-bottom:-2px;color:var(--green);cursor:pointer">Dados pessoais</button>
+        <button id="ptab-btn-senha" onclick="setPerfilTab('senha')" style="padding:10px 22px;font-size:13px;font-weight:600;font-family:inherit;background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text3);cursor:pointer">Segurança</button>
+      </div>
+
+      <!-- ABA DADOS PESSOAIS -->
+      <div id="ptab-geral">
+        <div class="card" style="max-width:760px;padding:28px">
+          <div style="display:flex;gap:32px;align-items:flex-start">
+            <!-- coluna avatar -->
+            <div style="display:flex;flex-direction:column;align-items:center;gap:12px;flex-shrink:0">
+              <div id="perfil-page-avatar" style="width:100px;height:100px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;color:#fff;border:4px solid var(--green-light)">?</div>
+              <div id="perfil-page-nome" style="font-size:13px;font-weight:600;color:var(--text);text-align:center;max-width:120px">—</div>
+              <div id="perfil-page-email-hdr" style="font-size:11px;color:var(--text3);text-align:center;max-width:120px;word-break:break-all">—</div>
+            </div>
+            <!-- coluna form -->
+            <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div style="grid-column:1/-1">
+                <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Nome completo</label>
+                <input id="perfil-nome" type="text" placeholder="Seu nome completo" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Telefone</label>
+                <input id="perfil-telefone" type="text" placeholder="(00) 00000-0000" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">CREFITO</label>
+                <input id="perfil-crefito" type="text" placeholder="Ex: 3-123456-F" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Cidade</label>
+                <input id="perfil-cidade" type="text" placeholder="Sua cidade" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Estado</label>
+                <select id="perfil-estado" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text);background:var(--surface)">
+                  <option value="">Selecione...</option>
+                  <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option>
+                  <option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option>
+                  <option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option>
+                  <option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+                  <option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option>
+                  <option>SE</option><option>TO</option>
+                </select>
+              </div>
+              <div style="grid-column:1/-1">
+                <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">E-mail <span style="font-weight:400;color:var(--text3)">(não editável)</span></label>
+                <input id="perfil-email" type="text" disabled style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text3);background:var(--bg)">
+              </div>
+              <div style="grid-column:1/-1">
+                <div id="perfil-msg" style="font-size:12px;min-height:16px;margin-bottom:8px"></div>
+                <button onclick="salvarPerfil()" style="padding:9px 24px;border:none;border-radius:var(--radius);background:var(--green);color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit"><i class="ti ti-device-floppy" style="vertical-align:-2px;margin-right:6px"></i>Salvar alterações</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA SEGURANÇA -->
+      <div id="ptab-senha" style="display:none">
+        <div class="card" style="max-width:440px;padding:28px">
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px"><i class="ti ti-lock" style="vertical-align:-2px;margin-right:8px;color:var(--green)"></i>Alterar senha</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:24px">Sua nova senha deve ter no mínimo 6 caracteres.</div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div>
+              <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Nova senha</label>
+              <input type="password" id="senha-nova" placeholder="Mínimo 6 caracteres" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Confirmar senha</label>
+              <input type="password" id="senha-conf" placeholder="Repita a nova senha" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+            </div>
+            <div id="senha-msg" style="font-size:12px;min-height:16px"></div>
+            <div>
+              <button onclick="salvarNovaSenha()" style="padding:9px 24px;border:none;border-radius:var(--radius);background:var(--green);color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit"><i class="ti ti-lock" style="vertical-align:-2px;margin-right:6px"></i>Salvar nova senha</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -789,7 +914,7 @@ async function navTo(page, btn){
   const titles={
     'visao-geral':'Visão geral','pagamentos':'Pagamentos',
     'atendimentos':'Atendimentos','pacientes':'Pacientes','relatorio':'Relatório mensal','agenda':'Agenda',
-    'admin':'Controle de acesso','cadastros':'Cadastros de usuários'
+    'admin':'Controle de acesso','cadastros':'Cadastros de usuários','perfil':'Meu perfil'
   };
   document.getElementById('page-title').textContent=titles[page]||page;
   const dataPages=['visao-geral','pagamentos','atendimentos','pacientes','relatorio'];
@@ -802,6 +927,7 @@ async function navTo(page, btn){
   if(page==='agenda'){semanaAtual();}
   if(page==='admin') renderAdmin();
   if(page==='cadastros') renderCadastros();
+  if(page==='perfil') renderPerfil();
 }
 
 function navToLink(page){
@@ -1668,6 +1794,10 @@ async function loadProfile() {
   if (navCadastros) navCadastros.style.display = currentProfile?.role === 'admin' ? 'flex' : 'none';
   const footerEl = document.getElementById('sidebar-user');
   if (footerEl) footerEl.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${currentProfile?.nome || currentUser.email}</div><div style="font-size:11px;color:var(--text3)">${currentUser.email}</div>`;
+  const nome = currentProfile?.nome || currentUser.email || '';
+  const initials = nome.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
+  const av = document.getElementById('topbar-avatar');
+  if (av) av.textContent = initials;
 }
 
 function showAuthScreen() {
@@ -1745,6 +1875,120 @@ async function doRegister() {
     err.style.color = 'var(--green)';
     err.textContent = 'Conta criada! Faça login para continuar.';
   }
+}
+
+function toggleUserPanel() {
+  const panel = document.getElementById('user-panel');
+  if (!panel) return;
+  if (panel.classList.contains('user-panel-hidden')) {
+    // populate
+    const nome = currentProfile?.nome || currentUser?.email || '';
+    const email = currentUser?.email || '';
+    const initials = nome.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
+    document.getElementById('user-panel-avatar-lg').textContent = initials;
+    document.getElementById('user-panel-name').textContent = nome || email;
+    document.getElementById('user-panel-email').textContent = email;
+    panel.classList.remove('user-panel-hidden');
+    setTimeout(() => document.addEventListener('click', closePanelOutside, {once:true}), 10);
+  } else {
+    closeUserPanel();
+  }
+}
+function closeUserPanel() {
+  const panel = document.getElementById('user-panel');
+  if (panel) panel.classList.add('user-panel-hidden');
+}
+function closePanelOutside(e) {
+  const wrap = document.querySelector('.user-panel-wrap');
+  if (wrap && !wrap.contains(e.target)) closeUserPanel();
+  else if (wrap && wrap.contains(e.target)) setTimeout(() => document.addEventListener('click', closePanelOutside, {once:true}), 10);
+}
+
+function renderPerfil() {
+  const nome = currentProfile?.nome || '';
+  const email = currentUser?.email || '';
+  const initials = nome.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
+  document.getElementById('perfil-page-avatar').textContent = initials;
+  document.getElementById('perfil-page-nome').textContent = nome || email;
+  document.getElementById('perfil-page-email-hdr').textContent = email;
+  document.getElementById('perfil-nome').value = nome;
+  document.getElementById('perfil-email').value = email;
+  document.getElementById('perfil-telefone').value = currentProfile?.telefone || '';
+  document.getElementById('perfil-crefito').value = currentProfile?.crefito || '';
+  document.getElementById('perfil-cidade').value = currentProfile?.cidade || '';
+  document.getElementById('perfil-estado').value = currentProfile?.estado || '';
+  document.getElementById('perfil-msg').textContent = '';
+}
+function closePerfilModal() {
+  const modal = document.getElementById('modal-perfil');
+  if (modal) modal.style.display = 'none';
+}
+async function salvarPerfil() {
+  const msg = document.getElementById('perfil-msg');
+  const nome = document.getElementById('perfil-nome').value.trim();
+  if (!nome) { msg.style.color = 'var(--red)'; msg.textContent = 'Nome é obrigatório.'; return; }
+  msg.style.color = 'var(--text3)'; msg.textContent = 'Salvando...';
+  const { error } = await _sb.rpc('update_own_profile', {
+    p_nome: nome,
+    p_telefone: document.getElementById('perfil-telefone').value.trim() || null,
+    p_crefito: document.getElementById('perfil-crefito').value.trim() || null,
+    p_cidade: document.getElementById('perfil-cidade').value.trim() || null,
+    p_estado: document.getElementById('perfil-estado').value || null,
+  });
+  if (error) { msg.style.color = 'var(--red)'; msg.textContent = 'Erro: ' + error.message; return; }
+  // atualiza cache local
+  const cidade = document.getElementById('perfil-cidade').value.trim();
+  const estado = document.getElementById('perfil-estado').value;
+  if (currentProfile) {
+    currentProfile.nome = nome;
+    currentProfile.telefone = document.getElementById('perfil-telefone').value.trim();
+    currentProfile.crefito = document.getElementById('perfil-crefito').value.trim();
+    currentProfile.cidade = cidade;
+    currentProfile.estado = estado;
+  }
+  try { renderUI(); } catch(e) {}
+  // atualiza cabeçalho da página de perfil
+  const initials = nome.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
+  const pgAvatar = document.getElementById('perfil-page-avatar');
+  const pgNome = document.getElementById('perfil-page-nome');
+  const pgEmailHdr = document.getElementById('perfil-page-email-hdr');
+  if (pgAvatar) pgAvatar.textContent = initials;
+  if (pgNome) pgNome.textContent = nome;
+  if (pgEmailHdr) pgEmailHdr.textContent = currentUser?.email || '';
+  msg.style.color = 'var(--green)'; msg.textContent = 'Perfil salvo com sucesso!';
+}
+
+function setPerfilTab(tab) {
+  document.getElementById('ptab-geral').style.display = tab === 'geral' ? '' : 'none';
+  document.getElementById('ptab-senha').style.display = tab === 'senha' ? '' : 'none';
+  const btnGeral = document.getElementById('ptab-btn-geral');
+  const btnSenha = document.getElementById('ptab-btn-senha');
+  btnGeral.style.borderBottomColor = tab === 'geral' ? 'var(--green)' : 'transparent';
+  btnGeral.style.color = tab === 'geral' ? 'var(--green)' : 'var(--text3)';
+  btnSenha.style.borderBottomColor = tab === 'senha' ? 'var(--green)' : 'transparent';
+  btnSenha.style.color = tab === 'senha' ? 'var(--green)' : 'var(--text3)';
+  if (tab === 'senha') { document.getElementById('senha-nova').value = ''; document.getElementById('senha-conf').value = ''; document.getElementById('senha-msg').textContent = ''; }
+}
+
+function openAlterarSenha() {
+  navTo('perfil', null);
+  setTimeout(() => setPerfilTab('senha'), 50);
+}
+function closeAlterarSenha() {
+  const modal = document.getElementById('modal-senha');
+  if (modal) modal.style.display = 'none';
+}
+async function salvarNovaSenha() {
+  const nova = document.getElementById('senha-nova').value;
+  const conf = document.getElementById('senha-conf').value;
+  const msg = document.getElementById('senha-msg');
+  if (nova.length < 6) { msg.style.color = 'var(--red)'; msg.textContent = 'A senha deve ter ao menos 6 caracteres.'; return; }
+  if (nova !== conf) { msg.style.color = 'var(--red)'; msg.textContent = 'As senhas não coincidem.'; return; }
+  msg.style.color = 'var(--text3)'; msg.textContent = 'Salvando...';
+  const { error } = await _sb.auth.updateUser({ password: nova });
+  if (error) { msg.style.color = 'var(--red)'; msg.textContent = 'Erro: ' + error.message; return; }
+  msg.style.color = 'var(--green)'; msg.textContent = 'Senha alterada com sucesso!';
+  setTimeout(closeAlterarSenha, 1500);
 }
 
 async function doLogout() {
@@ -1857,5 +2101,86 @@ async function changeUserRole(userId, role) {
   renderDashboard();
 })();
 </script>
+
+<!-- MODAL MEU PERFIL -->
+<div id="modal-perfil" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10000;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:var(--radius-lg);width:480px;max-width:95vw;box-shadow:var(--shadow-md);overflow:hidden">
+    <!-- header verde com avatar -->
+    <div style="background:var(--green);padding:28px 24px 20px;display:flex;align-items:center;gap:18px">
+      <div id="perfil-avatar-lg" style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;border:3px solid rgba(255,255,255,0.4);flex-shrink:0">?</div>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#fff" id="perfil-header-nome">—</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.75)" id="perfil-header-email">—</div>
+      </div>
+      <button onclick="closePerfilModal()" style="margin-left:auto;border:none;background:rgba(255,255,255,0.2);cursor:pointer;font-size:18px;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center">&times;</button>
+    </div>
+    <!-- form -->
+    <div style="padding:24px">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Dados pessoais</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div style="grid-column:1/-1">
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Nome completo</label>
+          <input id="perfil-nome" type="text" placeholder="Seu nome completo" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Telefone</label>
+          <input id="perfil-telefone" type="text" placeholder="(00) 00000-0000" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">CREFITO</label>
+          <input id="perfil-crefito" type="text" placeholder="Ex: 3-123456-F" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Cidade</label>
+          <input id="perfil-cidade" type="text" placeholder="Sua cidade" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">Estado</label>
+          <select id="perfil-estado" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text);background:var(--surface)">
+            <option value="">Selecione...</option>
+            <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option>
+            <option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option>
+            <option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option>
+            <option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+            <option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option>
+            <option>SE</option><option>TO</option>
+          </select>
+        </div>
+        <div style="grid-column:1/-1">
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px">E-mail</label>
+          <input id="perfil-email" type="text" disabled style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text3);background:var(--bg)">
+        </div>
+      </div>
+      <div id="perfil-msg" style="font-size:12px;min-height:18px;margin-bottom:12px"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="closePerfilModal()" style="padding:8px 18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit">Cancelar</button>
+        <button onclick="salvarPerfil()" style="padding:8px 18px;border:none;border-radius:var(--radius);background:var(--green);color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ALTERAR SENHA -->
+<div id="modal-senha" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10000;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:360px;box-shadow:var(--shadow-md)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <span style="font-size:16px;font-weight:700;color:var(--text)"><i class="ti ti-lock" style="vertical-align:-2px;margin-right:8px;color:var(--green)"></i>Alterar senha</span>
+      <button onclick="closeAlterarSenha()" style="border:none;background:transparent;cursor:pointer;font-size:20px;color:var(--text3);line-height:1">&times;</button>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Nova senha</label>
+      <input type="password" id="senha-nova" class="form-control" placeholder="Mínimo 6 caracteres" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+    </div>
+    <div class="form-group" style="margin-bottom:18px">
+      <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Confirmar senha</label>
+      <input type="password" id="senha-conf" class="form-control" placeholder="Repita a nova senha" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+    </div>
+    <div id="senha-msg" style="font-size:12px;min-height:18px;margin-bottom:14px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeAlterarSenha()" style="padding:8px 18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text2);cursor:pointer;font-size:13px;font-family:inherit">Cancelar</button>
+      <button onclick="salvarNovaSenha()" style="padding:8px 18px;border:none;border-radius:var(--radius);background:var(--green);color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit">Salvar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
