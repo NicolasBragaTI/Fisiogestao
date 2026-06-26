@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.supabase.co https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
 <title>FisioGestão</title>
 <link rel="icon" type="image/png" href="fisioterapia.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -754,9 +755,25 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 // ── SUPABASE ─────────────────────────────────────────────
 const _sb = supabase.createClient(
   'https://igwkhdsywagbmqlispil.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlnd2toZHN5d2FnYm1xbGlzcGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODQ1MzgsImV4cCI6MjA5NzI2MDUzOH0.ZO3DWdJMCYwAC3fam79IKEaA8IabVINwDUBVpQr_v_8'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlnd2toZHN5d2FnYm1xbGlzcGlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2ODQ1MzgsImV4cCI6MjA5NzI2MDUzOH0.ZO3DWdJMCYwAC3fam79IKEaA8IabVINwDUBVpQr_v_8',
+  { auth: { storage: window.sessionStorage, persistSession: true, autoRefreshToken: true } }
 );
 // _sbAdmin removido — operações admin agora usam funções PostgreSQL SECURITY DEFINER
+
+// ── TIMEOUT POR INATIVIDADE (30 min) ─────────────────────
+let _idleTimer;
+function _resetIdle() {
+  clearTimeout(_idleTimer);
+  _idleTimer = setTimeout(async () => {
+    if (currentUser) {
+      toast('Sessão encerrada por inatividade.', 'error');
+      await doLogout();
+    }
+  }, 30 * 60 * 1000);
+}
+['click','keydown','mousemove','touchstart'].forEach(ev =>
+  document.addEventListener(ev, _resetIdle, { passive: true })
+);
 
 // ── DATA ────────────────────────────────────────────────
 let pacientes = [];
