@@ -1320,7 +1320,7 @@ function renderPagamentos(){
   const sta=document.getElementById('pay-status').value;
   const btnLimpar=document.getElementById('pay-btn-limpar');
   if(btnLimpar) btnLimpar.style.display=(mes||pid||sta)?'inline-flex':'none';
-  let list=atendimentos.filter(a=>!a.pacoteId); // exclui sessões de pacote (gerenciadas na aba Pacotes)
+  let list=[...atendimentos];
   // filtro de mês: pago → data efetiva (pagamento); pendente/parcial → data do atendimento
   if(mes) list=list.filter(a=>dataEfetiva(a)?.startsWith(mes));
   if(pid) list=list.filter(a=>a.pacienteId===pid);
@@ -1360,16 +1360,19 @@ function renderPagamentos(){
   if(!list.length){tbody.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
   tbody.innerHTML=list.map(a=>`
-    <tr>
+    <tr style="${a.pacoteId?'opacity:0.85;background:var(--bg2)':''}">
       <td>
         <div style="display:flex;align-items:center;gap:8px">
           <div class="pav" style="width:30px;height:30px;font-size:10px">${iniciais(nomePac(a.pacienteId))}</div>
-          <span style="font-weight:500">${esc(nomePac(a.pacienteId))}</span>
+          <div>
+            <span style="font-weight:500">${esc(nomePac(a.pacienteId))}</span>
+            ${a.pacoteId?`<div style="font-size:11px;color:var(--green);display:flex;align-items:center;gap:3px"><i class="ti ti-package"></i>${esc(pacotes.find(x=>x.id===a.pacoteId)?.nome||'Pacote')}</div>`:''}
+          </div>
         </div>
       </td>
       <td>${fmtData(a.data)}${a.hora?' <span style="color:var(--text3)">'+a.hora+'</span>':''}</td>
       <td>${a.vencimento?fmtData(a.vencimento):'<span style="color:var(--text3)">—</span>'}</td>
-      <td>${renderCelulaPagoEm(a)}</td>
+      <td>${a.pacoteId?'<span style="color:var(--text3);font-size:12px">via pacote</span>':renderCelulaPagoEm(a)}</td>
       <td>${situacaoChip(a)}</td>
       <td><span style="color:var(--text2)">${a.metodo||'—'}</span></td>
       <td style="text-align:right;font-weight:600">
@@ -1378,7 +1381,9 @@ function renderPagamentos(){
       </td>
       <td>${badgeHtml(statusComVencimento(a))}</td>
       <td style="text-align:right">
-        <button class="btn btn-ghost btn-sm" title="Histórico de pagamentos" onclick="abrirHistoricoPag('${a.id}')" style="color:var(--green)"><i class="ti ti-history"></i></button>
+        ${a.pacoteId
+          ? `<button class="btn btn-ghost btn-sm" title="Ver pacote" onclick="navTo('pacotes',null)" style="color:var(--green)"><i class="ti ti-package"></i></button>`
+          : `<button class="btn btn-ghost btn-sm" title="Histórico de pagamentos" onclick="abrirHistoricoPag('${a.id}')" style="color:var(--green)"><i class="ti ti-history"></i></button>`}
         <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
         <button class="btn btn-ghost btn-sm" title="Remover" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
       </td>
