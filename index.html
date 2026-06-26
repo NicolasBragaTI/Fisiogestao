@@ -269,6 +269,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="nav-item" onclick="navTo('agenda',this)"><i class="ti ti-calendar-week"></i> Agenda</button>
     <button class="nav-item" onclick="navTo('atendimentos',this)"><i class="ti ti-calendar"></i> Atendimentos</button>
     <button class="nav-item" onclick="navTo('pagamentos',this)"><i class="ti ti-credit-card"></i> Pagamentos</button>
+    <button class="nav-item" onclick="navTo('pacotes',this)"><i class="ti ti-package"></i> Pacotes</button>
     <div class="nav-section">Relatórios</div>
     <button class="nav-item" onclick="navTo('relatorio',this)"><i class="ti ti-chart-bar"></i> Relatório mensal</button>
     <button id="nav-cadastros" class="nav-item" onclick="navTo('cadastros',this)" style="display:none"><i class="ti ti-user-plus"></i> Cadastros</button>
@@ -396,6 +397,32 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         </div>
         <div id="pay-empty" class="empty" style="display:none"><i class="ti ti-receipt-off"></i><p>Nenhum pagamento encontrado</p></div>
       </div>
+    </div>
+
+    <!-- ===== PACOTES ===== -->
+    <div class="page" id="page-pacotes">
+      <div class="section-hdr">
+        <h2>Pacotes de sessões</h2>
+        <button class="btn btn-primary" onclick="openModalPacote()"><i class="ti ti-plus"></i> Novo pacote</button>
+      </div>
+      <!-- métricas -->
+      <div id="pac-metrics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px"></div>
+      <!-- filtros -->
+      <div class="card" style="margin-bottom:16px;padding:12px 16px">
+        <div class="filters" style="flex-wrap:wrap;gap:8px">
+          <select id="pacote-filtro-paciente" onchange="renderPacotes()" style="min-width:180px">
+            <option value="">Todos os pacientes</option>
+          </select>
+          <select id="pacote-filtro-status" onchange="renderPacotes()">
+            <option value="">Todos os status</option>
+            <option value="ativo">Ativos</option>
+            <option value="concluido">Concluídos</option>
+            <option value="cancelado">Cancelados</option>
+          </select>
+        </div>
+      </div>
+      <!-- lista -->
+      <div id="pacotes-lista"></div>
     </div>
 
     <!-- ===== ATENDIMENTOS ===== -->
@@ -679,6 +706,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <label>Data de vencimento</label>
         <input type="date" id="atend-vencimento" title="Deixe em branco se já pago">
       </div>
+      <div class="form-group">
+        <label>Pacote de sessões <span style="font-size:11px;color:var(--text3)">(opcional)</span></label>
+        <select id="atend-pacote">
+          <option value="">Nenhum (sessão avulsa)</option>
+        </select>
+      </div>
       <div class="form-group"><label>Observações clínicas</label><textarea id="atend-obs" placeholder="Evolução, procedimentos, observações..."></textarea></div>
     </div>
     <div class="modal-foot">
@@ -748,6 +781,52 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
     <div class="modal-body" id="ver-body"></div>
     <div class="modal-foot"><button class="btn btn-outline" onclick="document.getElementById('modal-ver').classList.remove('open')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- MODAL PACOTE -->
+<div id="modal-pacote" class="modal-bg" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head">
+      <h3 id="modal-pacote-title">Novo pacote</h3>
+      <button class="btn-ghost" style="padding:4px;border:none;background:none;cursor:pointer;color:var(--text2)" onclick="document.getElementById('modal-pacote').classList.remove('open')"><i class="ti ti-x" style="font-size:18px"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Paciente *</label>
+        <select id="pacote-paciente" onchange="atualizarValorPacote()"></select>
+      </div>
+      <div class="form-group">
+        <label>Nome do pacote *</label>
+        <input type="text" id="pacote-nome" placeholder="Ex: Pacote 10 sessoes - Lombar">
+      </div>
+      <div class="fg3">
+        <div class="form-group">
+          <label>Nr de sessoes *</label>
+          <input type="number" id="pacote-total-sessoes" min="1" step="1" placeholder="10" oninput="atualizarValorPacote()">
+        </div>
+        <div class="form-group">
+          <label>Valor por sessao (R$) *</label>
+          <input type="number" id="pacote-valor-sessao" min="0" step="0.01" placeholder="0,00" oninput="atualizarValorPacote()">
+        </div>
+        <div class="form-group">
+          <label>Valor total</label>
+          <input type="number" id="pacote-valor-total" min="0" step="0.01" placeholder="0,00" oninput="atualizarValorSessao()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Metodo de pagamento</label>
+        <select id="pacote-metodo">
+          <option>Pix</option><option>Dinheiro</option><option>Cartao de credito</option>
+          <option>Cartao de debito</option><option>Transferencia</option><option>Convenio</option><option>Outro</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Observacoes</label><textarea id="pacote-obs" placeholder="Diagnostico, protocolo, condicoes especiais..."></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-pacote').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarPacote()"><i class="ti ti-check"></i> Salvar</button>
+    </div>
   </div>
 </div>
 
@@ -834,8 +913,10 @@ async function loadData(){
     id: a.id, pacienteId: a.paciente_id, data: a.data||'', hora: a.hora||'', horaFim: a.hora_fim||'',
     valor: a.valor||0, valorRecebido: a.valor_recebido||0, metodo: a.metodo||'', status: a.status||'pendente',
     vencimento: a.vencimento||'', obs: a.obs||'', dataPagamento: a.data_pagamento||'',
-    historicoPagamentos: Array.isArray(a.historico_pagamentos) ? a.historico_pagamentos : []
+    historicoPagamentos: Array.isArray(a.historico_pagamentos) ? a.historico_pagamentos : [],
+    pacoteId: a.pacote_id||''
   }));
+  await dbLoadPacotes();
 }
 
 async function dbSavePaciente(p, isNew){
@@ -867,7 +948,7 @@ async function dbSaveAtend(a, isNew){
       id: a.id, paciente_id: a.pacienteId, data: a.data||null, hora: a.hora||null, hora_fim: a.horaFim||null,
       valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
       vencimento: a.vencimento||null, obs: a.obs||null, data_pagamento: a.dataPagamento||null,
-      historico_pagamentos: a.historicoPagamentos||[], user_id: currentUser.id
+      historico_pagamentos: a.historicoPagamentos||[], pacote_id: a.pacoteId||null, user_id: currentUser.id
     }).select('id');
     if(error) throw error;
     if(!data||!data.length) throw new Error('Sem permissão para criar atendimento.');
@@ -876,7 +957,7 @@ async function dbSaveAtend(a, isNew){
       paciente_id: a.pacienteId, data: a.data||null, hora: a.hora||null, hora_fim: a.horaFim||null,
       valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
       vencimento: a.vencimento||null, obs: a.obs||null, data_pagamento: a.dataPagamento||null,
-      historico_pagamentos: a.historicoPagamentos||[]
+      historico_pagamentos: a.historicoPagamentos||[], pacote_id: a.pacoteId||null
     }).eq('id', a.id).eq('user_id', currentUser.id).select('id');
     if(error) throw error;
     if(!data||!data.length) throw new Error('Sem permissão para editar este atendimento.');
@@ -922,9 +1003,9 @@ function statusComVencimento(a){
 
 function badgeHtml(status, vencimento){
   const s = (status==='pendente'||status==='parcial')&&vencimento ? statusComVencimento({status,vencimento}) : status;
-  const map = {pago:'badge-pago',pendente:'badge-pendente',atrasado:'badge-atrasado',cancelado:'badge-cancelado',parcial:'badge-pendente'};
-  const ico = {pago:'ti-circle-check',pendente:'ti-clock',atrasado:'ti-alert-circle',cancelado:'ti-x',parcial:'ti-clock-half-2'};
-  const label = {pago:'Pago',pendente:'Pendente',atrasado:'Atrasado',cancelado:'Cancelado',parcial:'Parcial'};
+  const map = {pago:'badge-pago',pendente:'badge-pendente',atrasado:'badge-atrasado',cancelado:'badge-cancelado',parcial:'badge-pendente',em_pacote:'badge-pago'};
+  const ico = {pago:'ti-circle-check',pendente:'ti-clock',atrasado:'ti-alert-circle',cancelado:'ti-x',parcial:'ti-clock-half-2',em_pacote:'ti-package'};
+  const label = {pago:'Pago',pendente:'Pendente',atrasado:'Atrasado',cancelado:'Cancelado',parcial:'Parcial',em_pacote:'Em pacote'};
   return `<span class="badge ${map[s]||'badge-cancelado'}"><i class="ti ${ico[s]||'ti-minus'}"></i>${label[s]||s}</span>`;
 }
 
@@ -973,10 +1054,10 @@ async function navTo(page, btn){
   const titles={
     'visao-geral':'Visão geral','pagamentos':'Pagamentos',
     'atendimentos':'Atendimentos','pacientes':'Pacientes','relatorio':'Relatório mensal','agenda':'Agenda',
-    'admin':'Controle de acesso','cadastros':'Cadastros de usuários','perfil':'Meu perfil'
+    'admin':'Controle de acesso','cadastros':'Cadastros de usuários','perfil':'Meu perfil','pacotes':'Pacotes de sessões'
   };
   document.getElementById('page-title').textContent=titles[page]||page;
-  const dataPages=['visao-geral','pagamentos','atendimentos','pacientes','relatorio'];
+  const dataPages=['visao-geral','pagamentos','atendimentos','pacientes','relatorio','pacotes'];
   if(dataPages.includes(page)) await loadData();
   if(page==='visao-geral') renderDashboard();
   if(page==='pagamentos'){populatePayFilters();renderPagamentos();}
@@ -987,6 +1068,7 @@ async function navTo(page, btn){
   if(page==='admin') renderAdmin();
   if(page==='cadastros') renderCadastros();
   if(page==='perfil') renderPerfil();
+  if(page==='pacotes') renderPacotes();
 }
 
 function navToLink(page){
@@ -995,21 +1077,50 @@ function navToLink(page){
 }
 
 // ── DASHBOARD ────────────────────────────────────────────
+// Retorna a data relevante para filtros financeiros:
+// - pago com histórico → data do último pagamento
+// - parcial com histórico → data do atendimento (ainda em aberto)
+// - sem histórico → data do atendimento
+function dataEfetiva(a){
+  if(a.status==='pago'){
+    const hist=a.historicoPagamentos||[];
+    if(hist.length) return hist[hist.length-1].data||a.data;
+    if(a.dataPagamento) return a.dataPagamento;
+  }
+  return a.data;
+}
+
 function renderDashboard(){
   const now = today();
   const thisMonth = now.substring(0,7);
-  const mesAtends = atendimentos.filter(a=>a.data&&a.data.startsWith(thisMonth));
+  // sessões avulsas (sem pacote) para métricas individuais
+  const mesAtends = atendimentos.filter(a=>!a.pacoteId&&a.data&&a.data.startsWith(thisMonth));
   const totalMes = mesAtends.reduce((s,a)=>s+parseFloat(a.valor||0),0);
-  const recebidoMes = mesAtends.reduce((s,a)=>{
-    if(a.status==='pago') return s+parseFloat(a.valor||0);
-    if(a.status==='parcial') return s+parseFloat(a.valorRecebido||0);
+  // recebido este mês: sessões avulsas + entradas de pacotes com data neste mês
+  const recebidoMes = atendimentos.filter(a=>!a.pacoteId).reduce((s,a)=>{
+    const hist=a.historicoPagamentos||[];
+    if(hist.length){
+      return s+hist.filter(p=>p.data&&p.data.startsWith(thisMonth))
+                   .reduce((ss,p)=>ss+parseFloat(p.valor||0),0);
+    }
+    if(a.status==='pago'&&a.data&&a.data.startsWith(thisMonth)) return s+parseFloat(a.valor||0);
+    if(a.status==='parcial'&&a.data&&a.data.startsWith(thisMonth)) return s+parseFloat(a.valorRecebido||0);
     return s;
+  },0) + pacotes.reduce((s,p)=>{
+    return s+(p.historicoPagamentos||[]).filter(x=>x.data&&x.data.startsWith(thisMonth))
+                                        .reduce((ss,x)=>ss+parseFloat(x.valor||0),0);
   },0);
-  const pendentes = atendimentos.filter(a=>statusComVencimento(a)==='pendente');
-  const atrasados = atendimentos.filter(a=>statusComVencimento(a)==='atrasado');
-  const parciais  = atendimentos.filter(a=>statusComVencimento(a)==='parcial');
-  const totalPend = [...pendentes,...atrasados,...parciais]
+  // exclui sessões vinculadas a pacotes das métricas individuais
+  const avulsos = atendimentos.filter(a=>!a.pacoteId);
+  const pendentes = avulsos.filter(a=>statusComVencimento(a)==='pendente');
+  const atrasados = avulsos.filter(a=>statusComVencimento(a)==='atrasado');
+  const parciais  = avulsos.filter(a=>statusComVencimento(a)==='parcial');
+  const totalPendAvulso = [...pendentes,...atrasados,...parciais]
     .reduce((s,a)=>s+parseFloat(a.valor||0)-parseFloat(a.valorRecebido||0),0);
+  const totalPendPacotes = pacotes.filter(p=>p.status==='ativo')
+    .reduce((s,p)=>s+parseFloat(p.valorTotal||0)-parseFloat(p.valorRecebido||0),0);
+  const totalPend = totalPendAvulso + totalPendPacotes;
+  const qtdPacotesAtivos = pacotes.filter(p=>p.status==='ativo'&&(parseFloat(p.valorTotal||0)-parseFloat(p.valorRecebido||0))>0).length;
 
   document.getElementById('dash-metrics').innerHTML=`
     <div class="metric-card green">
@@ -1025,7 +1136,7 @@ function renderDashboard(){
     <div class="metric-card amber">
       <div class="mc-label"><i class="ti ti-clock" style="font-size:14px;color:var(--amber)"></i>A receber</div>
       <div class="mc-value" style="font-size:18px;color:var(--amber)">${brl(totalPend)}</div>
-      <div class="mc-sub">${pendentes.length+atrasados.length+parciais.length} cobrança${pendentes.length+atrasados.length+parciais.length!==1?'s':''} pendente${pendentes.length+atrasados.length+parciais.length!==1?'s':''}</div>
+      <div class="mc-sub">${pendentes.length+atrasados.length+parciais.length} sessão${pendentes.length+atrasados.length+parciais.length!==1?'ões':''} avulsa${pendentes.length+atrasados.length+parciais.length!==1?'s':''}${qtdPacotesAtivos>0?' · '+qtdPacotesAtivos+' pacote'+(qtdPacotesAtivos!==1?'s':''):''}</div>
     </div>
     <div class="metric-card red">
       <div class="mc-label"><i class="ti ti-alert-circle" style="font-size:14px;color:var(--red)"></i>Atrasados</div>
@@ -1174,6 +1285,7 @@ function abrirHistoricoPag(atendId){
 function fecharHistoricoPag(){
   document.getElementById('modal-hpag').classList.remove('open');
   _hpagAtendId = null;
+  _hpacoteId = null;
 }
 
 function renderHistoricoLista(a){
@@ -1201,64 +1313,6 @@ function renderHistoricoLista(a){
     </table>`;
 }
 
-async function adicionarPagamentoHistorico(){
-  if(!_hpagAtendId) return;
-  const a = atendimentos.find(x=>x.id===_hpagAtendId);
-  if(!a) return;
-  const dataPag = document.getElementById('hpag-data').value;
-  const valorPag = parseFloat(document.getElementById('hpag-valor').value)||0;
-  const metodo = document.getElementById('hpag-metodo').value;
-  const obs = document.getElementById('hpag-obs').value.trim();
-  if(!dataPag||valorPag<=0){ toast('Preencha data e valor','error'); return; }
-  const totalAtual = (a.historicoPagamentos||[]).reduce((s,p)=>s+parseFloat(p.valor||0),0);
-  if(totalAtual+valorPag > parseFloat(a.valor||0)+0.01){ toast('Total dos pagamentos superaria o valor da sessão','error'); return; }
-  const novoHist = [...(a.historicoPagamentos||[]), {id:Date.now().toString(), data:dataPag, valor:valorPag, metodo, obs}];
-  const novoTotal = novoHist.reduce((s,p)=>s+parseFloat(p.valor||0),0);
-  const novoStatus = novoTotal >= parseFloat(a.valor||0)-0.01 ? 'pago' : 'parcial';
-  const { error } = await _sb.from('atendimentos').update({
-    historico_pagamentos: novoHist,
-    valor_recebido: novoTotal,
-    status: novoStatus,
-    data_pagamento: dataPag
-  }).eq('id', _hpagAtendId).eq('user_id', currentUser.id);
-  if(error){ toast('Erro ao salvar: '+error.message,'error'); return; }
-  toast('Pagamento registrado!');
-  document.getElementById('hpag-valor').value='';
-  document.getElementById('hpag-obs').value='';
-  await loadData();
-  renderDashboard();
-  renderHistoricoLista(atendimentos.find(x=>x.id===_hpagAtendId));
-  const activePage=[...document.querySelectorAll('.page.active')][0]?.id;
-  if(activePage==='page-pagamentos'){populatePayFilters();renderPagamentos();}
-}
-
-async function removerPagamentoHistorico(pagId){
-  if(!_hpagAtendId) return;
-  const a = atendimentos.find(x=>x.id===_hpagAtendId);
-  if(!a) return;
-  if(!confirm('Remover este pagamento?')) return;
-  const novoHist = (a.historicoPagamentos||[]).filter(p=>p.id!==pagId);
-  const novoTotal = novoHist.reduce((s,p)=>s+parseFloat(p.valor||0),0);
-  const valor = parseFloat(a.valor||0);
-  let novoStatus = a.status;
-  if(novoTotal<=0) novoStatus = a.vencimento ? 'pendente' : 'pendente';
-  else if(novoTotal>=valor-0.01) novoStatus='pago';
-  else novoStatus='parcial';
-  const ultimaData = novoHist.length ? novoHist[novoHist.length-1].data : null;
-  const { error } = await _sb.from('atendimentos').update({
-    historico_pagamentos: novoHist,
-    valor_recebido: novoTotal,
-    status: novoStatus,
-    data_pagamento: ultimaData
-  }).eq('id', _hpagAtendId).eq('user_id', currentUser.id);
-  if(error){ toast('Erro ao remover: '+error.message,'error'); return; }
-  toast('Pagamento removido.');
-  await loadData();
-  renderDashboard();
-  renderHistoricoLista(atendimentos.find(x=>x.id===_hpagAtendId));
-  const activePage=[...document.querySelectorAll('.page.active')][0]?.id;
-  if(activePage==='page-pagamentos'){populatePayFilters();renderPagamentos();}
-}
 
 function renderPagamentos(){
   const mes=document.getElementById('pay-mes').value;
@@ -1266,16 +1320,23 @@ function renderPagamentos(){
   const sta=document.getElementById('pay-status').value;
   const btnLimpar=document.getElementById('pay-btn-limpar');
   if(btnLimpar) btnLimpar.style.display=(mes||pid||sta)?'inline-flex':'none';
-  let list=[...atendimentos];
-  if(mes) list=list.filter(a=>a.data&&a.data.startsWith(mes));
+  let list=atendimentos.filter(a=>!a.pacoteId); // exclui sessões de pacote (gerenciadas na aba Pacotes)
+  // filtro de mês: pago → data efetiva (pagamento); pendente/parcial → data do atendimento
+  if(mes) list=list.filter(a=>dataEfetiva(a)?.startsWith(mes));
   if(pid) list=list.filter(a=>a.pacienteId===pid);
   if(sta) list=list.filter(a=>statusComVencimento(a)===sta);
 
   // métricas (calculadas antes dos filtros de status, mas com filtros de mês/paciente)
-  const base=[...atendimentos].filter(a=>(!mes||a.data?.startsWith(mes))&&(!pid||a.pacienteId===pid));
+  const base=atendimentos.filter(a=>!a.pacoteId&&(!mes||dataEfetiva(a)?.startsWith(mes))&&(!pid||a.pacienteId===pid));
   const pendente=base.filter(a=>['pendente','parcial','atrasado'].includes(statusComVencimento(a)))
     .reduce((s,a)=>s+parseFloat(a.valor||0)-parseFloat(a.valorRecebido||0),0);
   const recebido=base.reduce((s,a)=>{
+    const hist=a.historicoPagamentos||[];
+    if(hist.length){
+      // soma só entradas cujo mês bate com o filtro
+      return s+hist.filter(p=>!mes||p.data?.startsWith(mes))
+                   .reduce((ss,p)=>ss+parseFloat(p.valor||0),0);
+    }
     if(a.status==='pago') return s+parseFloat(a.valor||0);
     if(a.status==='parcial') return s+parseFloat(a.valorRecebido||0);
     return s;
@@ -1343,7 +1404,10 @@ function renderAtendimentos(){
       <td>${a.metodo||'—'}</td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">${a.obs||''}</td>
       <td style="text-align:right;font-weight:600">${brl(a.valor)}</td>
-      <td>${badgeHtml(statusComVencimento(a))}</td>
+      <td>
+        ${badgeHtml(statusComVencimento(a))}
+        ${a.pacoteId?`<div style="font-size:11px;color:var(--green);margin-top:3px;display:flex;align-items:center;gap:3px"><i class="ti ti-package"></i>${esc(pacotes.find(x=>x.id===a.pacoteId)?.nome||'Pacote')}</div>`:''}
+      </td>
       <td style="text-align:right">
         <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
         <button class="btn btn-ghost btn-sm" title="Remover" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
@@ -1520,6 +1584,7 @@ function openModalAtend(id){
   if(id){
     const a=atendimentos.find(x=>x.id===id);
     sel.value=a.pacienteId;
+    popularPacotesSelect(a.pacienteId, a.pacoteId||'');
     document.getElementById('atend-data').value=a.data;
     document.getElementById('atend-hora').value=a.hora||'';
     document.getElementById('atend-hora-fim').value=a.horaFim||'';
@@ -1531,6 +1596,7 @@ function openModalAtend(id){
     document.getElementById('atend-obs').value=a.obs||'';
   } else {
     sel.value=pacientes[0]?.id||'';
+    popularPacotesSelect(sel.value);
     document.getElementById('atend-data').value=t;
     document.getElementById('atend-hora').value='';
     document.getElementById('atend-hora-fim').value='';
@@ -1560,8 +1626,20 @@ function calcSaldo(){
 }
 function preencherValorPadrao(){
   if(editAtendId) return;
-  const p=pacientes.find(x=>x.id===document.getElementById('atend-paciente').value);
+  const pid=document.getElementById('atend-paciente').value;
+  const p=pacientes.find(x=>x.id===pid);
   if(p?.valorPadrao) document.getElementById('atend-valor').value=p.valorPadrao;
+  popularPacotesSelect(pid);
+}
+
+function popularPacotesSelect(pid, valorSelecionado=''){
+  const sel=document.getElementById('atend-pacote');
+  const ativos=pacotes.filter(x=>x.pacienteId===pid&&x.status==='ativo');
+  sel.innerHTML='<option value="">Nenhum (sessão avulsa)</option>'+ativos.map(x=>{
+    const feitas=sessoesRealizadas(x.id).length;
+    return `<option value="${x.id}">${esc(x.nome)} (${feitas}/${x.totalSessoes} sessões)</option>`;
+  }).join('');
+  if(valorSelecionado) sel.value=valorSelecionado;
 }
 
 function editAtend(id){openModalAtend(id);}
@@ -1591,18 +1669,26 @@ async function salvarAtend(){
   } else if(recebido>0){
     historicoPagamentos=[{id:Date.now().toString(),data:today(),valor:recebido,metodo,obs:''}];
   }
+  const pacoteId=document.getElementById('atend-pacote').value||null;
+  // se vinculado a pacote: usa valor/sessao do pacote e status 'em_pacote'
+  let finalValor=valorNum, finalStatus=statusAuto, finalRecebido=recebido, finalHist=historicoPagamentos;
+  if(pacoteId){
+    const pac=pacotes.find(x=>x.id===pacoteId);
+    if(pac){ finalValor=pac.valorSessao; finalRecebido=0; finalStatus='em_pacote'; finalHist=[]; }
+  }
   const obj={
     id:editAtendId||Date.now().toString(),
     pacienteId:pid,data,
     hora:document.getElementById('atend-hora').value,
     horaFim:document.getElementById('atend-hora-fim').value,
-    valor:valorNum,
-    valorRecebido:recebido,
+    valor:finalValor,
+    valorRecebido:finalRecebido,
     metodo,
-    status:statusAuto,
-    vencimento:document.getElementById('atend-vencimento').value,
+    status:finalStatus,
+    vencimento:pacoteId?'':document.getElementById('atend-vencimento').value,
     obs:document.getElementById('atend-obs').value,
-    historicoPagamentos
+    historicoPagamentos:finalHist,
+    pacoteId
   };
   try{
     await dbSaveAtend(obj, !editAtendId);
@@ -1629,6 +1715,354 @@ async function delAtend(id){
     if(activePage==='page-pagamentos'){populatePayFilters();renderPagamentos();}
     if(activePage==='page-atendimentos'){populateAtFilters();renderAtendimentos();}
   } catch(e){ toast('Erro ao remover: '+e.message,'error'); }
+}
+
+// ── PACOTES ──────────────────────────────────────────────
+let pacotes = [];
+let editPacoteId = null;
+
+async function dbLoadPacotes(){
+  const { data, error } = await _sb.from('pacotes').select('*').order('created_at', {ascending:false});
+  if(error){ console.error(error); return; }
+  pacotes = (data||[]).map(p=>({
+    id: p.id, pacienteId: p.paciente_id, nome: p.nome,
+    totalSessoes: p.total_sessoes||0, valorSessao: p.valor_sessao||0,
+    valorTotal: p.valor_total||0, valorRecebido: p.valor_recebido||0,
+    historicoPagamentos: Array.isArray(p.historico_pagamentos)?p.historico_pagamentos:[],
+    metodo: p.metodo||'', status: p.status||'ativo', obs: p.obs||'',
+    createdAt: p.created_at||''
+  }));
+}
+
+async function dbSavePacote(p, isNew){
+  if(isNew){
+    const {data,error}=await _sb.from('pacotes').insert({
+      id:p.id, paciente_id:p.pacienteId, nome:p.nome,
+      total_sessoes:p.totalSessoes, valor_sessao:p.valorSessao,
+      valor_total:p.valorTotal, valor_recebido:p.valorRecebido||0,
+      historico_pagamentos:p.historicoPagamentos||[],
+      metodo:p.metodo||null, status:p.status||'ativo', obs:p.obs||null,
+      user_id:currentUser.id
+    }).select('id');
+    if(error) throw error;
+    if(!data||!data.length) throw new Error('Sem permissao para criar pacote.');
+  } else {
+    const {data,error}=await _sb.from('pacotes').update({
+      paciente_id:p.pacienteId, nome:p.nome,
+      total_sessoes:p.totalSessoes, valor_sessao:p.valorSessao,
+      valor_total:p.valorTotal, valor_recebido:p.valorRecebido||0,
+      historico_pagamentos:p.historicoPagamentos||[],
+      metodo:p.metodo||null, status:p.status||'ativo', obs:p.obs||null
+    }).eq('id',p.id).eq('user_id',currentUser.id).select('id');
+    if(error) throw error;
+    if(!data||!data.length) throw new Error('Sem permissao para editar pacote.');
+  }
+}
+
+async function dbDeletePacote(id){
+  // desvincular sessoes do pacote antes de remover
+  await _sb.from('atendimentos').update({pacote_id:null}).eq('pacote_id',id).eq('user_id',currentUser.id);
+  await _sb.from('pacotes').delete().eq('id',id).eq('user_id',currentUser.id);
+}
+
+function sessoesNoPacote(pacoteId){
+  return atendimentos.filter(a=>a.pacoteId===pacoteId);
+}
+
+function sessoesRealizadas(pacoteId){
+  return atendimentos.filter(a=>a.pacoteId===pacoteId && a.status!=='cancelado');
+}
+
+function openModalPacote(id){
+  editPacoteId = id||null;
+  document.getElementById('modal-pacote-title').textContent = id?'Editar pacote':'Novo pacote';
+  const sel = document.getElementById('pacote-paciente');
+  sel.innerHTML = pacientes.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('');
+  if(!pacientes.length){toast('Cadastre um paciente primeiro','error');return;}
+  if(id){
+    const p=pacotes.find(x=>x.id===id);
+    sel.value=p.pacienteId;
+    document.getElementById('pacote-nome').value=p.nome;
+    document.getElementById('pacote-total-sessoes').value=p.totalSessoes;
+    document.getElementById('pacote-valor-sessao').value=p.valorSessao;
+    document.getElementById('pacote-valor-total').value=p.valorTotal;
+    document.getElementById('pacote-metodo').value=p.metodo||'Pix';
+    document.getElementById('pacote-obs').value=p.obs||'';
+  } else {
+    sel.value=pacientes[0]?.id||'';
+    document.getElementById('pacote-nome').value='';
+    document.getElementById('pacote-total-sessoes').value='';
+    document.getElementById('pacote-valor-sessao').value='';
+    document.getElementById('pacote-valor-total').value='';
+    document.getElementById('pacote-metodo').value='Pix';
+    document.getElementById('pacote-obs').value='';
+    // preenche valor padrao do paciente
+    const p=pacientes.find(x=>x.id===sel.value);
+    if(p?.valorPadrao) document.getElementById('pacote-valor-sessao').value=p.valorPadrao;
+  }
+  document.getElementById('modal-pacote').classList.add('open');
+}
+
+function atualizarValorPacote(){
+  const n=parseInt(document.getElementById('pacote-total-sessoes').value)||0;
+  const v=parseFloat(document.getElementById('pacote-valor-sessao').value)||0;
+  if(n>0&&v>0) document.getElementById('pacote-valor-total').value=(n*v).toFixed(2);
+}
+
+function atualizarValorSessao(){
+  const n=parseInt(document.getElementById('pacote-total-sessoes').value)||0;
+  const t=parseFloat(document.getElementById('pacote-valor-total').value)||0;
+  if(n>0&&t>0) document.getElementById('pacote-valor-sessao').value=(t/n).toFixed(2);
+}
+
+async function salvarPacote(){
+  const pid=document.getElementById('pacote-paciente').value;
+  const nome=document.getElementById('pacote-nome').value.trim();
+  const total=parseInt(document.getElementById('pacote-total-sessoes').value)||0;
+  const valorSessao=parseFloat(document.getElementById('pacote-valor-sessao').value)||0;
+  const valorTotal=parseFloat(document.getElementById('pacote-valor-total').value)||0;
+  if(!pid||!nome||total<1||valorTotal<=0){toast('Preencha todos os campos obrigatórios','error');return;}
+  const obj={
+    id: editPacoteId||Date.now().toString(),
+    pacienteId:pid, nome, totalSessoes:total,
+    valorSessao, valorTotal,
+    valorRecebido: editPacoteId?(pacotes.find(x=>x.id===editPacoteId)?.valorRecebido||0):0,
+    historicoPagamentos: editPacoteId?(pacotes.find(x=>x.id===editPacoteId)?.historicoPagamentos||[]):[],
+    metodo:document.getElementById('pacote-metodo').value,
+    status: editPacoteId?(pacotes.find(x=>x.id===editPacoteId)?.status||'ativo'):'ativo',
+    obs:document.getElementById('pacote-obs').value.trim()
+  };
+  try{
+    await dbSavePacote(obj,!editPacoteId);
+    document.getElementById('modal-pacote').classList.remove('open');
+    toast(editPacoteId?'Pacote atualizado!':'Pacote criado!');
+    editPacoteId=null;
+    await dbLoadPacotes();
+    await loadData();
+    renderPacotes();
+  } catch(e){ toast('Erro: '+e.message,'error'); }
+}
+
+async function delPacote(id){
+  if(!confirm('Remover este pacote? As sessões vinculadas serão desvinculadas.')) return;
+  try{
+    await dbDeletePacote(id);
+    toast('Pacote removido.');
+    await dbLoadPacotes();
+    await loadData();
+    renderPacotes();
+  } catch(e){ toast('Erro: '+e.message,'error'); }
+}
+
+async function concluirPacote(id){
+  if(!confirm('Marcar pacote como concluído?')) return;
+  const {error}=await _sb.from('pacotes').update({status:'concluido'}).eq('id',id).eq('user_id',currentUser.id);
+  if(error){toast('Erro: '+error.message,'error');return;}
+  toast('Pacote concluído!');
+  await dbLoadPacotes();
+  renderPacotes();
+}
+
+function populatePacoteFilters(){
+  const pp=document.getElementById('pacote-filtro-paciente');
+  const cur=pp.value;
+  pp.innerHTML='<option value="">Todos os pacientes</option>'+pacientes.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('');
+  if(cur) pp.value=cur;
+}
+
+function renderPacotes(){
+  populatePacoteFilters();
+  const fpid=document.getElementById('pacote-filtro-paciente').value;
+  const fsta=document.getElementById('pacote-filtro-status').value;
+  let list=[...pacotes];
+  if(fpid) list=list.filter(p=>p.pacienteId===fpid);
+  if(fsta) list=list.filter(p=>p.status===fsta);
+
+  // métricas globais
+  const ativos=pacotes.filter(p=>p.status==='ativo');
+  const totalRecPacotes=pacotes.reduce((s,p)=>s+parseFloat(p.valorRecebido||0),0);
+  const totalPendPacotes=pacotes.filter(p=>p.status==='ativo').reduce((s,p)=>s+parseFloat(p.valorTotal||0)-parseFloat(p.valorRecebido||0),0);
+  document.getElementById('pac-metrics').innerHTML=`
+    <div class="metric-card green"><div class="mc-label">Pacotes ativos</div><div class="mc-value">${ativos.length}</div></div>
+    <div class="metric-card green"><div class="mc-label">Total recebido (pacotes)</div><div class="mc-value" style="font-size:18px">${brl(totalRecPacotes)}</div></div>
+    <div class="metric-card amber"><div class="mc-label">A receber (pacotes)</div><div class="mc-value" style="font-size:18px;color:var(--amber)">${brl(totalPendPacotes)}</div></div>`;
+
+  const el=document.getElementById('pacotes-lista');
+  if(!list.length){
+    el.innerHTML='<div class="empty"><i class="ti ti-package"></i><p>Nenhum pacote encontrado</p></div>';
+    return;
+  }
+  el.innerHTML=list.map(p=>{
+    const realizadas=sessoesRealizadas(p.id).length;
+    const pct=p.totalSessoes>0?Math.round(realizadas/p.totalSessoes*100):0;
+    const saldo=parseFloat(p.valorTotal||0)-parseFloat(p.valorRecebido||0);
+    const statusCor={ativo:'var(--green)',concluido:'var(--text2)',cancelado:'var(--red)'}[p.status]||'var(--text2)';
+    const statusLabel={ativo:'Ativo',concluido:'Concluído',cancelado:'Cancelado'}[p.status]||p.status;
+    const hist=p.historicoPagamentos||[];
+    const ultimoPag=hist.length?`Último pagamento: ${fmtData(hist[hist.length-1].data)}`:'Nenhum pagamento registrado';
+    return `<div class="card" style="margin-bottom:12px;padding:18px 20px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <div class="pav" style="width:36px;height:36px;flex-shrink:0">${iniciais(nomePac(p.pacienteId))}</div>
+            <div>
+              <div style="font-weight:700;font-size:15px">${esc(p.nome)}</div>
+              <div style="font-size:12px;color:var(--text2)">${esc(nomePac(p.pacienteId))}</div>
+            </div>
+            <span style="margin-left:4px;font-size:11px;font-weight:600;color:${statusCor};background:${statusCor}18;padding:2px 8px;border-radius:20px">${statusLabel}</span>
+          </div>
+          <!-- barra de progresso -->
+          <div style="margin:10px 0 6px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px">
+              <span><strong style="color:var(--text1)">${realizadas}</strong> de ${p.totalSessoes} sessões realizadas</span>
+              <span>${pct}%</span>
+            </div>
+            <div style="background:var(--border);border-radius:99px;height:8px;overflow:hidden">
+              <div style="background:var(--green);height:100%;width:${pct}%;border-radius:99px;transition:width .3s"></div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text3)">${ultimoPag}</div>
+          ${p.obs?`<div style="font-size:12px;color:var(--text2);margin-top:4px;font-style:italic">${esc(p.obs)}</div>`:''}
+        </div>
+        <!-- valores -->
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:160px">
+          <div style="text-align:right">
+            <div style="font-size:11px;color:var(--text3)">Valor do pacote</div>
+            <div style="font-weight:700;font-size:16px">${brl(p.valorTotal)}</div>
+            <div style="font-size:11px;color:var(--text3)">${brl(p.valorSessao)}/sessão</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:var(--text3)">Recebido</div>
+            <div style="font-weight:600;color:var(--green)">${brl(p.valorRecebido)}</div>
+          </div>
+          ${saldo>0?`<div style="text-align:right"><div style="font-size:11px;color:var(--text3)">Saldo</div><div style="font-weight:600;color:var(--amber)">${brl(saldo)}</div></div>`:''}
+          <div style="display:flex;gap:6px;margin-top:4px">
+            <button class="btn btn-ghost btn-sm" style="color:var(--green)" title="Pagamentos" onclick="abrirHistoricoPacote('${p.id}')"><i class="ti ti-cash"></i></button>
+            ${p.status==='ativo'?`<button class="btn btn-ghost btn-sm" title="Concluir" onclick="concluirPacote('${p.id}')" style="color:var(--text2)"><i class="ti ti-circle-check"></i></button>`:''}
+            <button class="btn btn-ghost btn-sm" title="Editar" onclick="openModalPacote('${p.id}')"><i class="ti ti-edit"></i></button>
+            <button class="btn btn-ghost btn-sm" title="Remover" onclick="delPacote('${p.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Histórico de pagamentos do PACOTE
+let _hpacoteId = null;
+
+function abrirHistoricoPacote(pacoteId){
+  _hpacoteId = pacoteId;
+  const p = pacotes.find(x=>x.id===pacoteId);
+  if(!p) return;
+  document.getElementById('hpag-paciente-nome').textContent = nomePac(p.pacienteId)+' — '+p.nome;
+  document.getElementById('hpag-data').value = today();
+  document.getElementById('hpag-valor').value = '';
+  document.getElementById('hpag-metodo').value = p.metodo||'Pix';
+  document.getElementById('hpag-obs').value = '';
+  // reutiliza o modal de histórico mas em modo pacote
+  _hpagAtendId = null; // garante que não confunde com atendimento
+  renderHistoricoPacoteLista(p);
+  document.getElementById('modal-hpag').classList.add('open');
+}
+
+function renderHistoricoPacoteLista(p){
+  const hist = p.historicoPagamentos||[];
+  const totalPago = hist.reduce((s,x)=>s+parseFloat(x.valor||0),0);
+  const saldo = parseFloat(p.valorTotal||0)-totalPago;
+  document.getElementById('hpag-resumo').innerHTML=`
+    <div class="metric-card" style="flex:1;padding:10px 14px"><div class="mc-label" style="font-size:11px">Valor do pacote</div><div style="font-weight:700;font-size:15px">${brl(p.valorTotal)}</div></div>
+    <div class="metric-card green" style="flex:1;padding:10px 14px"><div class="mc-label" style="font-size:11px">Recebido</div><div style="font-weight:700;font-size:15px;color:var(--green)">${brl(totalPago)}</div></div>
+    <div class="metric-card ${saldo>0?'amber':'green'}" style="flex:1;padding:10px 14px"><div class="mc-label" style="font-size:11px">Saldo</div><div style="font-weight:700;font-size:15px;color:var(--${saldo>0?'amber':'green'})">${brl(saldo)}</div></div>`;
+  if(!hist.length){
+    document.getElementById('hpag-lista').innerHTML='<div style="text-align:center;color:var(--text3);padding:12px;font-size:13px">Nenhum pagamento registrado</div>';
+    return;
+  }
+  document.getElementById('hpag-lista').innerHTML=`
+    <table class="pay-table" style="font-size:13px">
+      <thead><tr><th>Data</th><th>Valor</th><th>Método</th><th>Obs.</th><th></th></tr></thead>
+      <tbody>${hist.map(x=>`<tr>
+        <td style="font-weight:500">${fmtData(x.data)}</td>
+        <td style="color:var(--green);font-weight:600">${brl(x.valor)}</td>
+        <td style="color:var(--text2)">${esc(x.metodo||'—')}</td>
+        <td style="color:var(--text3);font-size:12px">${esc(x.obs||'')}</td>
+        <td style="text-align:right"><button class="btn btn-ghost btn-sm" onclick="removerPagamentoPacote('${x.id}')" style="color:var(--red)" title="Remover"><i class="ti ti-trash"></i></button></td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+async function adicionarPagamentoHistorico(){
+  // decide se é pacote ou atendimento
+  if(_hpacoteId) return adicionarPagamentoPacote();
+  if(!_hpagAtendId) return;
+  const a = atendimentos.find(x=>x.id===_hpagAtendId);
+  if(!a) return;
+  const dataPag = document.getElementById('hpag-data').value;
+  const valorPag = parseFloat(document.getElementById('hpag-valor').value)||0;
+  const metodo = document.getElementById('hpag-metodo').value;
+  const obs = document.getElementById('hpag-obs').value.trim();
+  if(!dataPag||valorPag<=0){ toast('Preencha data e valor','error'); return; }
+  const totalAtual = (a.historicoPagamentos||[]).reduce((s,p)=>s+parseFloat(p.valor||0),0);
+  if(totalAtual+valorPag > parseFloat(a.valor||0)+0.01){ toast('Total dos pagamentos superaria o valor da sessão','error'); return; }
+  const novoHist = [...(a.historicoPagamentos||[]), {id:Date.now().toString(), data:dataPag, valor:valorPag, metodo, obs}];
+  const novoTotal = novoHist.reduce((s,p)=>s+parseFloat(p.valor||0),0);
+  const novoStatus = novoTotal >= parseFloat(a.valor||0)-0.01 ? 'pago' : 'parcial';
+  const { error } = await _sb.from('atendimentos').update({
+    historico_pagamentos: novoHist, valor_recebido: novoTotal, status: novoStatus, data_pagamento: dataPag
+  }).eq('id', _hpagAtendId).eq('user_id', currentUser.id);
+  if(error){ toast('Erro ao salvar: '+error.message,'error'); return; }
+  toast('Pagamento registrado!');
+  document.getElementById('hpag-valor').value='';
+  document.getElementById('hpag-obs').value='';
+  await loadData();
+  renderDashboard();
+  renderHistoricoLista(atendimentos.find(x=>x.id===_hpagAtendId));
+  const activePage=[...document.querySelectorAll('.page.active')][0]?.id;
+  if(activePage==='page-pagamentos'){populatePayFilters();renderPagamentos();}
+}
+
+async function adicionarPagamentoPacote(){
+  const p = pacotes.find(x=>x.id===_hpacoteId);
+  if(!p) return;
+  const dataPag = document.getElementById('hpag-data').value;
+  const valorPag = parseFloat(document.getElementById('hpag-valor').value)||0;
+  const metodo = document.getElementById('hpag-metodo').value;
+  const obs = document.getElementById('hpag-obs').value.trim();
+  if(!dataPag||valorPag<=0){ toast('Preencha data e valor','error'); return; }
+  const totalAtual = (p.historicoPagamentos||[]).reduce((s,x)=>s+parseFloat(x.valor||0),0);
+  if(totalAtual+valorPag > parseFloat(p.valorTotal||0)+0.01){ toast('Total superaria o valor do pacote','error'); return; }
+  const novoHist = [...(p.historicoPagamentos||[]), {id:Date.now().toString(), data:dataPag, valor:valorPag, metodo, obs}];
+  const novoTotal = novoHist.reduce((s,x)=>s+parseFloat(x.valor||0),0);
+  const {error} = await _sb.from('pacotes').update({
+    historico_pagamentos: novoHist, valor_recebido: novoTotal
+  }).eq('id', _hpacoteId).eq('user_id', currentUser.id);
+  if(error){ toast('Erro: '+error.message,'error'); return; }
+  toast('Pagamento registrado!');
+  document.getElementById('hpag-valor').value='';
+  document.getElementById('hpag-obs').value='';
+  await dbLoadPacotes();
+  renderHistoricoPacoteLista(pacotes.find(x=>x.id===_hpacoteId));
+  renderDashboard();
+  const activePage=[...document.querySelectorAll('.page.active')][0]?.id;
+  if(activePage==='page-pacotes') renderPacotes();
+}
+
+async function removerPagamentoPacote(pagId){
+  const p = pacotes.find(x=>x.id===_hpacoteId);
+  if(!p) return;
+  if(!confirm('Remover este pagamento?')) return;
+  const novoHist = (p.historicoPagamentos||[]).filter(x=>x.id!==pagId);
+  const novoTotal = novoHist.reduce((s,x)=>s+parseFloat(x.valor||0),0);
+  const {error} = await _sb.from('pacotes').update({
+    historico_pagamentos: novoHist, valor_recebido: novoTotal
+  }).eq('id', _hpacoteId).eq('user_id', currentUser.id);
+  if(error){ toast('Erro: '+error.message,'error'); return; }
+  toast('Pagamento removido.');
+  await dbLoadPacotes();
+  renderHistoricoPacoteLista(pacotes.find(x=>x.id===_hpacoteId));
+  renderDashboard();
+  const activePage=[...document.querySelectorAll('.page.active')][0]?.id;
+  if(activePage==='page-pacotes') renderPacotes();
 }
 
 // ── MODAL PACIENTE ───────────────────────────────────────
@@ -1824,11 +2258,13 @@ function renderAgendaDiaria(){
           if(a.horaFim){const [fh,fm]=a.horaFim.split(':').map(Number);height=Math.max(30,((fh-hh)*60+(fm-mm))/60*HOUR_H);}
           const cor=corPaciente(a.pacienteId);
           const s=statusComVencimento(a);
-          const borda=s==='atrasado'?'#a32d2d':s==='pago'?'#145530':'#c97c00';
+          const borda=s==='atrasado'?'#a32d2d':s==='pago'||s==='em_pacote'?'#145530':'#c97c00';
+          const pacNome=a.pacoteId?(pacotes.find(x=>x.id===a.pacoteId)?.nome||''):'';
           return `<div class="agenda-block" onclick="event.stopPropagation();editAtend('${a.id}')"
             style="top:${top+1}px;height:${height-2}px;background:${cor};color:#fff;border-left:4px solid ${borda}">
             <div style="font-size:11px;opacity:0.85">${a.hora}${a.horaFim?' – '+a.horaFim:''}</div>
             <div style="font-weight:700;font-size:13px">${esc(nomePac(a.pacienteId))}</div>
+            ${pacNome?`<div style="font-size:11px;opacity:0.85;margin-top:1px"><i class="ti ti-package"></i> ${esc(pacNome)}</div>`:''}
             ${a.obs?`<div style="font-size:11px;opacity:0.8;margin-top:2px">${a.obs}</div>`:''}
           </div>`;
         }).join('')}
@@ -1884,11 +2320,12 @@ function renderAgendaSemanal(){
             if(a.horaFim){const [fh,fm]=a.horaFim.split(':').map(Number);height=Math.max(22,((fh-hh)*60+(fm-mm))/60*HOUR_H-2);}
             const cor=corPaciente(a.pacienteId);
             const s=statusComVencimento(a);
-            const borda=s==='atrasado'?'#a32d2d':s==='pago'?'#145530':'#c97c00';
+            const borda=s==='atrasado'?'#a32d2d':s==='pago'||s==='em_pacote'?'#145530':'#c97c00';
             const nome=nomePac(a.pacienteId).split(' ').slice(0,2).join(' ');
+            const isPacote=!!a.pacoteId;
             return `<div class="agenda-block" onclick="event.stopPropagation();editAtend('${a.id}')"
               style="top:${top+1}px;height:${height}px;background:${cor};color:#fff;border-left:3px solid ${borda}">
-              <div style="font-size:10px;opacity:.85">${a.hora}${a.horaFim?' – '+a.horaFim:''}</div>
+              <div style="font-size:10px;opacity:.85">${a.hora}${a.horaFim?' – '+a.horaFim:''}${isPacote?' 📦':''}</div>
               <div style="font-weight:700;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nome}</div>
             </div>`;
           }).join('')}
@@ -1949,8 +2386,8 @@ function renderAgendaMensal(){
         const horaFim=a.horaFim?` – ${a.horaFim.substring(0,5)}`:'';
         return `<div onclick="event.stopPropagation();editAtend('${a.id}')"
           style="background:${cor};color:#fff;border-radius:4px;padding:2px 5px;font-size:10px;font-weight:600;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer"
-          title="${esc(nomePac(a.pacienteId))} ${hora}${horaFim}">
-          ${hora} ${nome}${horaFim}
+          title="${esc(nomePac(a.pacienteId))} ${hora}${horaFim}${a.pacoteId?' 📦 Pacote':''}">
+          ${a.pacoteId?'📦 ':''}${hora} ${nome}${horaFim}
         </div>`;
       }).join('')}
       ${events.length>3?`<div style="font-size:10px;color:var(--text3);padding:1px 4px">+${events.length-3} mais</div>`:''}
