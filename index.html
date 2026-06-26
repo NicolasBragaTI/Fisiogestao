@@ -751,6 +751,44 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   </div>
 </div>
 
+<!-- MODAL HISTÓRICO DE PAGAMENTOS -->
+<div id="modal-hpag" class="modal-bg" onclick="if(event.target===this)fecharHistoricoPag()">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-head">
+      <div>
+        <h3>Histórico de pagamentos</h3>
+        <div id="hpag-paciente-nome" style="font-size:13px;color:var(--text2);margin-top:2px"></div>
+      </div>
+      <button class="btn-ghost" style="padding:4px;border:none;background:none;cursor:pointer;color:var(--text2)" onclick="fecharHistoricoPag()"><i class="ti ti-x" style="font-size:18px"></i></button>
+    </div>
+    <div class="modal-body">
+      <!-- resumo -->
+      <div id="hpag-resumo" style="display:flex;gap:12px;margin-bottom:16px"></div>
+      <!-- lista de pagamentos -->
+      <div id="hpag-lista" style="margin-bottom:16px"></div>
+      <!-- formulário novo pagamento -->
+      <div style="background:var(--bg2);border-radius:var(--radius);padding:14px">
+        <div style="font-weight:600;font-size:13px;margin-bottom:10px;color:var(--text1)"><i class="ti ti-plus"></i> Registrar pagamento</div>
+        <div class="fg3">
+          <div class="form-group"><label>Data *</label><input type="date" id="hpag-data"></div>
+          <div class="form-group"><label>Valor (R$) *</label><input type="number" id="hpag-valor" min="0.01" step="0.01" placeholder="0,00"></div>
+          <div class="form-group"><label>Método</label>
+            <select id="hpag-metodo">
+              <option>Pix</option><option>Dinheiro</option><option>Cartão de crédito</option>
+              <option>Cartão de débito</option><option>Transferência</option><option>Convênio</option><option>Outro</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:6px"><label>Observação</label><input type="text" id="hpag-obs" placeholder="Opcional"></div>
+        <button class="btn btn-primary" style="margin-top:8px;width:100%" onclick="adicionarPagamentoHistorico()"><i class="ti ti-check"></i> Adicionar pagamento</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="fecharHistoricoPag()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ── SUPABASE ─────────────────────────────────────────────
@@ -795,7 +833,8 @@ async function loadData(){
   atendimentos = (atends||[]).map(a => ({
     id: a.id, pacienteId: a.paciente_id, data: a.data||'', hora: a.hora||'', horaFim: a.hora_fim||'',
     valor: a.valor||0, valorRecebido: a.valor_recebido||0, metodo: a.metodo||'', status: a.status||'pendente',
-    vencimento: a.vencimento||'', obs: a.obs||'', dataPagamento: a.data_pagamento||''
+    vencimento: a.vencimento||'', obs: a.obs||'', dataPagamento: a.data_pagamento||'',
+    historicoPagamentos: Array.isArray(a.historico_pagamentos) ? a.historico_pagamentos : []
   }));
 }
 
@@ -827,7 +866,8 @@ async function dbSaveAtend(a, isNew){
     const { data, error } = await _sb.from('atendimentos').insert({
       id: a.id, paciente_id: a.pacienteId, data: a.data||null, hora: a.hora||null, hora_fim: a.horaFim||null,
       valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
-      vencimento: a.vencimento||null, obs: a.obs||null, data_pagamento: a.dataPagamento||null, user_id: currentUser.id
+      vencimento: a.vencimento||null, obs: a.obs||null, data_pagamento: a.dataPagamento||null,
+      historico_pagamentos: a.historicoPagamentos||[], user_id: currentUser.id
     }).select('id');
     if(error) throw error;
     if(!data||!data.length) throw new Error('Sem permissão para criar atendimento.');
@@ -835,7 +875,8 @@ async function dbSaveAtend(a, isNew){
     const { data, error } = await _sb.from('atendimentos').update({
       paciente_id: a.pacienteId, data: a.data||null, hora: a.hora||null, hora_fim: a.horaFim||null,
       valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
-      vencimento: a.vencimento||null, obs: a.obs||null, data_pagamento: a.dataPagamento||null
+      vencimento: a.vencimento||null, obs: a.obs||null, data_pagamento: a.dataPagamento||null,
+      historico_pagamentos: a.historicoPagamentos||[]
     }).eq('id', a.id).eq('user_id', currentUser.id).select('id');
     if(error) throw error;
     if(!data||!data.length) throw new Error('Sem permissão para editar este atendimento.');
@@ -1101,6 +1142,124 @@ function limparFiltrosPag(){
   renderPagamentos();
 }
 
+// ── HISTÓRICO DE PAGAMENTOS ──────────────────────────────
+let _hpagAtendId = null;
+
+function renderCelulaPagoEm(a){
+  const hist = a.historicoPagamentos||[];
+  if(!hist.length){
+    return a.dataPagamento
+      ? `<span style="color:var(--green);font-weight:500">${fmtData(a.dataPagamento)}</span>`
+      : '<span style="color:var(--text3)">—</span>';
+  }
+  if(hist.length===1){
+    return `<span style="color:var(--green);font-weight:500">${fmtData(hist[0].data)}</span>`;
+  }
+  return `<button onclick="abrirHistoricoPag('${a.id}')" style="background:none;border:none;cursor:pointer;color:var(--green);font-weight:500;font-size:12px;padding:0;display:flex;align-items:center;gap:4px"><i class="ti ti-history" style="font-size:14px"></i>${hist.length} pagamentos</button>`;
+}
+
+function abrirHistoricoPag(atendId){
+  _hpagAtendId = atendId;
+  const a = atendimentos.find(x=>x.id===atendId);
+  if(!a) return;
+  document.getElementById('hpag-paciente-nome').textContent = nomePac(a.pacienteId) + ' — Sessão de ' + fmtData(a.data);
+  document.getElementById('hpag-data').value = today();
+  document.getElementById('hpag-valor').value = '';
+  document.getElementById('hpag-metodo').value = a.metodo||'Pix';
+  document.getElementById('hpag-obs').value = '';
+  renderHistoricoLista(a);
+  document.getElementById('modal-hpag').classList.add('open');
+}
+
+function fecharHistoricoPag(){
+  document.getElementById('modal-hpag').classList.remove('open');
+  _hpagAtendId = null;
+}
+
+function renderHistoricoLista(a){
+  const hist = a.historicoPagamentos||[];
+  const totalPago = hist.reduce((s,p)=>s+parseFloat(p.valor||0),0);
+  const saldo = parseFloat(a.valor||0) - totalPago;
+  document.getElementById('hpag-resumo').innerHTML=`
+    <div class="metric-card" style="flex:1;padding:10px 14px"><div class="mc-label" style="font-size:11px">Valor da sessão</div><div style="font-weight:700;font-size:15px">${brl(a.valor)}</div></div>
+    <div class="metric-card green" style="flex:1;padding:10px 14px"><div class="mc-label" style="font-size:11px">Recebido</div><div style="font-weight:700;font-size:15px;color:var(--green)">${brl(totalPago)}</div></div>
+    <div class="metric-card ${saldo>0?'amber':'green'}" style="flex:1;padding:10px 14px"><div class="mc-label" style="font-size:11px">Saldo</div><div style="font-weight:700;font-size:15px;color:var(--${saldo>0?'amber':'green'})">${brl(saldo)}</div></div>`;
+  if(!hist.length){
+    document.getElementById('hpag-lista').innerHTML='<div style="text-align:center;color:var(--text3);padding:12px;font-size:13px">Nenhum pagamento registrado</div>';
+    return;
+  }
+  document.getElementById('hpag-lista').innerHTML=`
+    <table class="pay-table" style="font-size:13px">
+      <thead><tr><th>Data</th><th>Valor</th><th>Método</th><th>Obs.</th><th></th></tr></thead>
+      <tbody>${hist.map(p=>`<tr>
+        <td style="font-weight:500">${fmtData(p.data)}</td>
+        <td style="color:var(--green);font-weight:600">${brl(p.valor)}</td>
+        <td style="color:var(--text2)">${esc(p.metodo||'—')}</td>
+        <td style="color:var(--text3);font-size:12px">${esc(p.obs||'')}</td>
+        <td style="text-align:right"><button class="btn btn-ghost btn-sm" onclick="removerPagamentoHistorico('${p.id}')" style="color:var(--red)" title="Remover"><i class="ti ti-trash"></i></button></td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+}
+
+async function adicionarPagamentoHistorico(){
+  if(!_hpagAtendId) return;
+  const a = atendimentos.find(x=>x.id===_hpagAtendId);
+  if(!a) return;
+  const dataPag = document.getElementById('hpag-data').value;
+  const valorPag = parseFloat(document.getElementById('hpag-valor').value)||0;
+  const metodo = document.getElementById('hpag-metodo').value;
+  const obs = document.getElementById('hpag-obs').value.trim();
+  if(!dataPag||valorPag<=0){ toast('Preencha data e valor','error'); return; }
+  const totalAtual = (a.historicoPagamentos||[]).reduce((s,p)=>s+parseFloat(p.valor||0),0);
+  if(totalAtual+valorPag > parseFloat(a.valor||0)+0.01){ toast('Total dos pagamentos superaria o valor da sessão','error'); return; }
+  const novoHist = [...(a.historicoPagamentos||[]), {id:Date.now().toString(), data:dataPag, valor:valorPag, metodo, obs}];
+  const novoTotal = novoHist.reduce((s,p)=>s+parseFloat(p.valor||0),0);
+  const novoStatus = novoTotal >= parseFloat(a.valor||0)-0.01 ? 'pago' : 'parcial';
+  const { error } = await _sb.from('atendimentos').update({
+    historico_pagamentos: novoHist,
+    valor_recebido: novoTotal,
+    status: novoStatus,
+    data_pagamento: dataPag
+  }).eq('id', _hpagAtendId).eq('user_id', currentUser.id);
+  if(error){ toast('Erro ao salvar: '+error.message,'error'); return; }
+  toast('Pagamento registrado!');
+  document.getElementById('hpag-valor').value='';
+  document.getElementById('hpag-obs').value='';
+  await loadData();
+  renderDashboard();
+  renderHistoricoLista(atendimentos.find(x=>x.id===_hpagAtendId));
+  const activePage=[...document.querySelectorAll('.page.active')][0]?.id;
+  if(activePage==='page-pagamentos'){populatePayFilters();renderPagamentos();}
+}
+
+async function removerPagamentoHistorico(pagId){
+  if(!_hpagAtendId) return;
+  const a = atendimentos.find(x=>x.id===_hpagAtendId);
+  if(!a) return;
+  if(!confirm('Remover este pagamento?')) return;
+  const novoHist = (a.historicoPagamentos||[]).filter(p=>p.id!==pagId);
+  const novoTotal = novoHist.reduce((s,p)=>s+parseFloat(p.valor||0),0);
+  const valor = parseFloat(a.valor||0);
+  let novoStatus = a.status;
+  if(novoTotal<=0) novoStatus = a.vencimento ? 'pendente' : 'pendente';
+  else if(novoTotal>=valor-0.01) novoStatus='pago';
+  else novoStatus='parcial';
+  const ultimaData = novoHist.length ? novoHist[novoHist.length-1].data : null;
+  const { error } = await _sb.from('atendimentos').update({
+    historico_pagamentos: novoHist,
+    valor_recebido: novoTotal,
+    status: novoStatus,
+    data_pagamento: ultimaData
+  }).eq('id', _hpagAtendId).eq('user_id', currentUser.id);
+  if(error){ toast('Erro ao remover: '+error.message,'error'); return; }
+  toast('Pagamento removido.');
+  await loadData();
+  renderDashboard();
+  renderHistoricoLista(atendimentos.find(x=>x.id===_hpagAtendId));
+  const activePage=[...document.querySelectorAll('.page.active')][0]?.id;
+  if(activePage==='page-pagamentos'){populatePayFilters();renderPagamentos();}
+}
+
 function renderPagamentos(){
   const mes=document.getElementById('pay-mes').value;
   const pid=document.getElementById('pay-paciente').value;
@@ -1149,7 +1308,7 @@ function renderPagamentos(){
       </td>
       <td>${fmtData(a.data)}${a.hora?' <span style="color:var(--text3)">'+a.hora+'</span>':''}</td>
       <td>${a.vencimento?fmtData(a.vencimento):'<span style="color:var(--text3)">—</span>'}</td>
-      <td>${a.dataPagamento?`<span style="color:var(--green);font-weight:500">${fmtData(a.dataPagamento)}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+      <td>${renderCelulaPagoEm(a)}</td>
       <td>${situacaoChip(a)}</td>
       <td><span style="color:var(--text2)">${a.metodo||'—'}</span></td>
       <td style="text-align:right;font-weight:600">
@@ -1158,6 +1317,7 @@ function renderPagamentos(){
       </td>
       <td>${badgeHtml(statusComVencimento(a))}</td>
       <td style="text-align:right">
+        <button class="btn btn-ghost btn-sm" title="Histórico de pagamentos" onclick="abrirHistoricoPag('${a.id}')" style="color:var(--green)"><i class="ti ti-history"></i></button>
         <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
         <button class="btn btn-ghost btn-sm" title="Remover" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
       </td>
@@ -1418,6 +1578,19 @@ async function salvarAtend(){
     if(recebido>=valorNum&&valorNum>0) statusAuto='pago';
     else if(recebido>0) statusAuto='parcial';
   }
+  const metodo=document.getElementById('atend-metodo').value;
+  // herda histórico existente ao editar, ou cria primeiro entry ao criar com valor recebido
+  let historicoPagamentos=[];
+  if(editAtendId){
+    const existing=atendimentos.find(x=>x.id===editAtendId);
+    historicoPagamentos=existing?.historicoPagamentos||[];
+    // se não há histórico mas há valorRecebido, cria entry retroativa
+    if(!historicoPagamentos.length && recebido>0){
+      historicoPagamentos=[{id:Date.now().toString(),data:existing?.dataPagamento||data,valor:recebido,metodo,obs:''}];
+    }
+  } else if(recebido>0){
+    historicoPagamentos=[{id:Date.now().toString(),data,valor:recebido,metodo,obs:''}];
+  }
   const obj={
     id:editAtendId||Date.now().toString(),
     pacienteId:pid,data,
@@ -1425,10 +1598,11 @@ async function salvarAtend(){
     horaFim:document.getElementById('atend-hora-fim').value,
     valor:valorNum,
     valorRecebido:recebido,
-    metodo:document.getElementById('atend-metodo').value,
+    metodo,
     status:statusAuto,
     vencimento:document.getElementById('atend-vencimento').value,
-    obs:document.getElementById('atend-obs').value
+    obs:document.getElementById('atend-obs').value,
+    historicoPagamentos
   };
   try{
     await dbSaveAtend(obj, !editAtendId);
