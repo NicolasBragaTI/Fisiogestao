@@ -371,6 +371,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
             <option value="atrasado">Atrasado</option>
             <option value="cancelado">Cancelado</option>
           </select>
+          <button id="pay-btn-limpar" onclick="limparFiltrosPag()" style="display:none;padding:6px 12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface);color:var(--text2);cursor:pointer;font-size:12px;font-family:inherit;gap:4px;align-items:center"><i class="ti ti-filter-off" style="font-size:13px"></i> Limpar filtros</button>
           <div class="filter-spacer"></div>
           <button id="pay-btn-pagar" class="btn btn-sm" style="display:none;background:var(--green);color:#fff;border:none" onclick="abrirPagamentoPaciente(document.getElementById('pay-paciente').value)"><i class="ti ti-cash"></i> Registrar pagamento</button>
           <button class="btn btn-outline btn-sm" onclick="exportarCSV()"><i class="ti ti-download"></i> Exportar CSV</button>
@@ -965,7 +966,9 @@ function renderDashboard(){
   },0);
   const pendentes = atendimentos.filter(a=>statusComVencimento(a)==='pendente');
   const atrasados = atendimentos.filter(a=>statusComVencimento(a)==='atrasado');
-  const totalPend = [...pendentes,...atrasados].reduce((s,a)=>s+parseFloat(a.valor||0),0);
+  const parciais  = atendimentos.filter(a=>statusComVencimento(a)==='parcial');
+  const totalPend = [...pendentes,...atrasados,...parciais]
+    .reduce((s,a)=>s+parseFloat(a.valor||0)-parseFloat(a.valorRecebido||0),0);
 
   document.getElementById('dash-metrics').innerHTML=`
     <div class="metric-card green">
@@ -981,7 +984,7 @@ function renderDashboard(){
     <div class="metric-card amber">
       <div class="mc-label"><i class="ti ti-clock" style="font-size:14px;color:var(--amber)"></i>A receber</div>
       <div class="mc-value" style="font-size:18px;color:var(--amber)">${brl(totalPend)}</div>
-      <div class="mc-sub">${pendentes.length+atrasados.length} cobrança${pendentes.length+atrasados.length!==1?'s':''} pendente${pendentes.length+atrasados.length!==1?'s':''}</div>
+      <div class="mc-sub">${pendentes.length+atrasados.length+parciais.length} cobrança${pendentes.length+atrasados.length+parciais.length!==1?'s':''} pendente${pendentes.length+atrasados.length+parciais.length!==1?'s':''}</div>
     </div>
     <div class="metric-card red">
       <div class="mc-label"><i class="ti ti-alert-circle" style="font-size:14px;color:var(--red)"></i>Atrasados</div>
@@ -1091,10 +1094,19 @@ function populateAtFilters(){
   if(curP) pp.value=curP;
 }
 
+function limparFiltrosPag(){
+  document.getElementById('pay-mes').value='';
+  document.getElementById('pay-paciente').value='';
+  document.getElementById('pay-status').value='';
+  renderPagamentos();
+}
+
 function renderPagamentos(){
   const mes=document.getElementById('pay-mes').value;
   const pid=document.getElementById('pay-paciente').value;
   const sta=document.getElementById('pay-status').value;
+  const btnLimpar=document.getElementById('pay-btn-limpar');
+  if(btnLimpar) btnLimpar.style.display=(mes||pid||sta)?'inline-flex':'none';
   let list=[...atendimentos];
   if(mes) list=list.filter(a=>a.data&&a.data.startsWith(mes));
   if(pid) list=list.filter(a=>a.pacienteId===pid);
@@ -1880,17 +1892,33 @@ async function doRegister() {
   }
   if (error) { err.textContent = error.message || error.status + ' ' + error.name || JSON.stringify(Object.entries(error)); return; }
   if (data?.user) {
-    // auto-confirm enabled — log in directly
+    const needsConfirm = !data.user.email_confirmed_at && !data.session;
+    if (needsConfirm) {
+      // Email confirmation required
+      err.style.color = 'var(--green)';
+      err.textContent = '✓ Conta criada com sucesso! Verifique seu e-mail para confirmar o cadastro e depois faça login.';
+      document.getElementById('reg-nome').value = '';
+      document.getElementById('reg-email').value = '';
+      document.getElementById('reg-password').value = '';
+      document.getElementById('reg-confirm').value = '';
+      setTimeout(() => switchAuthTab('login'), 4000);
+      return;
+    }
+    // Auto-confirm still enabled — log in directly
     const { data: loginData, error: loginErr } = await _sb.auth.signInWithPassword({ email, password });
-    if (loginErr) { err.style.color='var(--green)'; err.textContent = 'Conta criada! Faça login para continuar.'; return; }
+    if (loginErr) { err.style.color='var(--green)'; err.textContent = '✓ Conta criada! Faça login para continuar.'; return; }
+    err.style.color = 'var(--green)';
+    err.textContent = '✓ Conta criada com sucesso! Entrando...';
+    await new Promise(r => setTimeout(r, 3000));
     currentUser = loginData.user;
     await loadProfile();
     hideAuthScreen();
     await loadData();
     renderDashboard();
+    toast('Bem-vindo ao FisioGestão! 👋', 'success');
   } else {
     err.style.color = 'var(--green)';
-    err.textContent = 'Conta criada! Faça login para continuar.';
+    err.textContent = '✓ Conta criada! Faça login para continuar.';
   }
 }
 
