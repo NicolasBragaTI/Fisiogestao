@@ -1586,10 +1586,10 @@ async function salvarAtend(){
     historicoPagamentos=existing?.historicoPagamentos||[];
     // se não há histórico mas há valorRecebido, cria entry retroativa
     if(!historicoPagamentos.length && recebido>0){
-      historicoPagamentos=[{id:Date.now().toString(),data:existing?.dataPagamento||data,valor:recebido,metodo,obs:''}];
+      historicoPagamentos=[{id:Date.now().toString(),data:existing?.dataPagamento||today(),valor:recebido,metodo,obs:''}];
     }
   } else if(recebido>0){
-    historicoPagamentos=[{id:Date.now().toString(),data,valor:recebido,metodo,obs:''}];
+    historicoPagamentos=[{id:Date.now().toString(),data:today(),valor:recebido,metodo,obs:''}];
   }
   const obj={
     id:editAtendId||Date.now().toString(),
