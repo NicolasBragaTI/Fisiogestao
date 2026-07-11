@@ -386,7 +386,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <h2>Pagamentos</h2>
         <button class="btn btn-primary" onclick="openModalAtend()"><i class="ti ti-plus"></i> Novo atendimento</button>
       </div>
-      <div class="metrics" id="pay-metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px"></div>
+      <div id="pay-metrics-bar" style="display:flex;gap:24px;margin-bottom:16px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);align-items:center"></div>
       <div class="card" style="margin-bottom:0">
         <div class="filters">
           <select id="pay-mes" onchange="renderPagamentos()"></select>
@@ -409,12 +409,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
             <thead>
               <tr>
                 <th>Paciente</th>
-                <th>Data atend.</th>
-                <th>Vencimento</th>
-                <th>Pago em</th>
-                <th>Situação</th>
-                <th>Método</th>
+                <th>Data</th>
                 <th class="text-right" style="text-align:right">Valor</th>
+                <th>Método</th>
                 <th>Status</th>
                 <th style="text-align:right"></th>
               </tr>
@@ -1366,10 +1363,21 @@ function renderPagamentos(){
   },0);
   const atrasado=base.filter(a=>statusComVencimento(a)==='atrasado')
     .reduce((s,a)=>s+parseFloat(a.valor||0)-parseFloat(a.valorRecebido||0),0);
-  document.getElementById('pay-metrics').innerHTML=`
-    <div class="metric-card amber"><div class="mc-label">Pendente acumulado</div><div class="mc-value" style="font-size:18px;color:var(--amber)">${brl(pendente)}</div></div>
-    <div class="metric-card green"><div class="mc-label">Total recebido</div><div class="mc-value" style="font-size:18px">${brl(recebido)}</div></div>
-    <div class="metric-card red"><div class="mc-label">Em atraso</div><div class="mc-value" style="font-size:18px;color:var(--red)">${brl(atrasado)}</div></div>`;
+  document.getElementById('pay-metrics-bar').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;font-weight:600">Pendente</span>
+      <span style="font-size:16px;font-weight:700;color:var(--amber)">${brl(pendente)}</span>
+    </div>
+    <div style="width:1px;background:var(--border);align-self:stretch"></div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;font-weight:600">Recebido</span>
+      <span style="font-size:16px;font-weight:700;color:var(--green)">${brl(recebido)}</span>
+    </div>
+    <div style="width:1px;background:var(--border);align-self:stretch"></div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;font-weight:600">Em atraso</span>
+      <span style="font-size:16px;font-weight:700;color:var(--red)">${brl(atrasado)}</span>
+    </div>`;
   const btnPagar = document.getElementById('pay-btn-pagar');
   btnPagar.style.display = (pid && pendente > 0) ? 'inline-flex' : 'none';
   list.sort((a,b)=>{
@@ -1394,14 +1402,11 @@ function renderPagamentos(){
         </div>
       </td>
       <td>${fmtData(a.data)}${a.hora?' <span style="color:var(--text3)">'+a.hora+'</span>':''}</td>
-      <td>${a.vencimento?fmtData(a.vencimento):'<span style="color:var(--text3)">—</span>'}</td>
-      <td>${a.pacoteId?'<span style="color:var(--text3);font-size:12px">via pacote</span>':renderCelulaPagoEm(a)}</td>
-      <td>${situacaoChip(a)}</td>
-      <td><span style="color:var(--text2)">${a.metodo||'—'}</span></td>
       <td style="text-align:right;font-weight:600">
         ${brl(a.valor)}
-        ${a.valorRecebido>0&&a.valorRecebido<a.valor?`<div style="font-size:11px;color:var(--amber);font-weight:500">Recebido: ${brl(a.valorRecebido)}</div><div style="font-size:11px;color:var(--red);font-weight:500">Saldo: ${brl(a.valor-a.valorRecebido)}</div>`:''}
+        ${a.valorRecebido>0&&a.valorRecebido<a.valor?`<div style="font-size:11px;color:var(--amber);font-weight:500">+${brl(a.valorRecebido)} · saldo ${brl(a.valor-a.valorRecebido)}</div>`:''}
       </td>
+      <td><span style="color:var(--text2)">${a.metodo||'—'}</span></td>
       <td>${badgeHtml(statusComVencimento(a))}</td>
       <td style="text-align:right">
         ${a.pacoteId
@@ -1629,13 +1634,21 @@ function openModalAtend(id){
     sel.value=pacientes[0]?.id||'';
     popularPacotesSelect(sel.value);
     document.getElementById('atend-data').value=t;
-    document.getElementById('atend-hora').value='';
-    document.getElementById('atend-hora-fim').value='';
+    const horasIni=atendimentos.map(a=>a.hora).filter(Boolean);
+    const horasFim=atendimentos.map(a=>a.horaFim).filter(Boolean);
+    function mediaHora(horas){
+      if(!horas.length) return '';
+      const mins=horas.map(h=>{const[hh,mm]=h.split(':');return parseInt(hh)*60+parseInt(mm);});
+      const avg=Math.round(mins.reduce((s,m)=>s+m,0)/mins.length/60)*60;
+      return String(avg/60).padStart(2,'0')+':00';
+    }
+    document.getElementById('atend-hora').value=mediaHora(horasIni);
+    document.getElementById('atend-hora-fim').value=mediaHora(horasFim);
     const p=pacientes.find(x=>x.id===sel.value);
     document.getElementById('atend-valor').value=p?.valorPadrao||'';
     document.getElementById('atend-recebido').value='';
     document.getElementById('atend-metodo').value='Pix';
-    document.getElementById('atend-status').value='pago';
+    document.getElementById('atend-status').value='pendente';
     document.getElementById('atend-vencimento').value='';
     document.getElementById('atend-obs').value='';
   }
