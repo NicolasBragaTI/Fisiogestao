@@ -3189,17 +3189,26 @@ async function doRegister() {
   try {
     const res = await _sb.auth.signUp({ email, password, options: { data: { nome } } });
     data = res.data; error = res.error;
-    console.log('signUp result:', JSON.stringify(res, null, 2));
   } catch(e) {
-    err.textContent = 'Erro JS: ' + e.message; return;
+    err.textContent = 'Erro inesperado: ' + (e?.message || String(e)); return;
   }
   if (error) {
-    const msg = error.message || '';
-    if(msg.toLowerCase().includes('already registered')||msg.toLowerCase().includes('already exists')) err.textContent='Este e-mail já está cadastrado. Tente fazer login.';
-    else if(msg.toLowerCase().includes('invalid email')) err.textContent='E-mail inválido. Verifique e tente novamente.';
-    else if(msg.toLowerCase().includes('password')) err.textContent='Senha inválida: '+msg;
-    else if(msg) err.textContent=msg;
-    else err.textContent='Erro ao criar conta ('+( error.status||error.statusCode||'desconhecido')+')';
+    const msg = typeof error.message === 'string' ? error.message.trim() : '';
+    const status = error.status || 0;
+    const isNetworkError = error.name === 'AuthRetryableFetchError' || status === 0 || status >= 500;
+    const isBadMsg = !msg || msg === '{}' || msg === '[]' || msg.startsWith('{') || msg.startsWith('[');
+    if (isNetworkError)
+      err.textContent = 'Erro de conexão com o servidor. Verifique sua internet e tente novamente.';
+    else if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already exists') || msg.toLowerCase().includes('user already'))
+      err.textContent = 'Este e-mail já está cadastrado. Tente fazer login.';
+    else if (msg.toLowerCase().includes('invalid email'))
+      err.textContent = 'E-mail inválido. Verifique e tente novamente.';
+    else if (msg.toLowerCase().includes('password') || msg.toLowerCase().includes('senha'))
+      err.textContent = 'Senha fraca: use ao menos 8 caracteres com letras e números.';
+    else if (!isBadMsg)
+      err.textContent = msg;
+    else
+      err.textContent = 'Erro ao criar conta (código: ' + status + '). Tente novamente.';
     return;
   }
   if (data?.user) {
