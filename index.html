@@ -326,7 +326,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div id="auth-register" style="display:none">
       <div class="form-group"><label>Nome completo</label><input type="text" id="reg-nome" placeholder="Seu nome"></div>
       <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="seu@email.com"></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="reg-password" placeholder="Mínimo 6 caracteres"></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="reg-password" placeholder="Mínimo 8 caracteres"></div>
       <div class="form-group"><label>Confirmar senha</label><input type="password" id="reg-confirm" placeholder="Repita a senha" onkeydown="if(event.key==='Enter')doRegister()"></div>
       <button class="btn btn-primary" onclick="doRegister()" style="width:100%;margin-top:8px;padding:12px;font-size:15px"><i class="ti ti-user-plus"></i> Criar conta</button>
     </div>
@@ -3184,7 +3184,7 @@ async function doRegister() {
   err.style.color = 'var(--red)'; err.textContent = '';
   if (!nome || !email || !password) { err.textContent = 'Preencha todos os campos.'; return; }
   if (password !== confirm) { err.textContent = 'As senhas não coincidem.'; return; }
-  if (password.length < 6) { err.textContent = 'A senha deve ter ao menos 6 caracteres.'; return; }
+  if (password.length < 8) { err.textContent = 'A senha deve ter ao menos 8 caracteres.'; return; }
   let data, error;
   try {
     const res = await _sb.auth.signUp({ email, password, options: { data: { nome } } });
@@ -3203,6 +3203,11 @@ async function doRegister() {
     return;
   }
   if (data?.user) {
+    // e-mail já cadastrado: Supabase retorna user com identities vazio
+    if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      err.textContent = 'Este e-mail já está cadastrado. Tente fazer login.';
+      return;
+    }
     const needsConfirm = !data.user.email_confirmed_at && !data.session;
     if (needsConfirm) {
       document.getElementById('reg-nome').value = '';
