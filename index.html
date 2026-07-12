@@ -3193,7 +3193,15 @@ async function doRegister() {
   } catch(e) {
     err.textContent = 'Erro JS: ' + e.message; return;
   }
-  if (error) { err.textContent = error.message || error.status + ' ' + error.name || JSON.stringify(Object.entries(error)); return; }
+  if (error) {
+    const msg = error.message || '';
+    if(msg.toLowerCase().includes('already registered')||msg.toLowerCase().includes('already exists')) err.textContent='Este e-mail já está cadastrado. Tente fazer login.';
+    else if(msg.toLowerCase().includes('invalid email')) err.textContent='E-mail inválido. Verifique e tente novamente.';
+    else if(msg.toLowerCase().includes('password')) err.textContent='Senha inválida: '+msg;
+    else if(msg) err.textContent=msg;
+    else err.textContent='Erro ao criar conta ('+( error.status||error.statusCode||'desconhecido')+')';
+    return;
+  }
   if (data?.user) {
     const needsConfirm = !data.user.email_confirmed_at && !data.session;
     if (needsConfirm) {
