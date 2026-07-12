@@ -179,6 +179,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .modal-head h3{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-0.025em}
 .modal-body{padding:22px 24px}
 .modal-foot{padding:14px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;background:var(--surface2)}
+.modal-drag-handle{display:none}
+.form-section-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
+.form-section-divider{height:1px;background:var(--border);margin:20px -24px 20px}
 .form-group{margin-bottom:16px}
 .form-group label{font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em}
 .form-group input,.form-group select,.form-group textarea,.form-input{width:100%;font-family:inherit;font-size:13px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);outline:none;transition:border-color 0.15s,box-shadow 0.15s}
@@ -264,7 +267,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   .section-hdr h2{font-size:17px}
   .card{padding:16px}
   .modal-bg{padding:0;align-items:flex-end}
-  .modal{border-radius:var(--radius-xl) var(--radius-xl) 0 0;width:100%;margin:0;max-height:92vh;overflow-y:auto;animation:slideSheet 0.25s cubic-bezier(0.34,1.1,0.64,1)}
+  .modal{border-radius:20px 20px 0 0;width:100%;margin:0;max-height:92vh;overflow-y:auto;animation:slideSheet 0.25s cubic-bezier(0.34,1.1,0.64,1)}
+  .modal-drag-handle{display:block;width:36px;height:4px;border-radius:2px;background:var(--border2);margin:12px auto 4px}
+  .modal-head{border-radius:0;padding:12px 20px 14px}
+  .modal-body{padding:18px 20px}
+  .modal-foot{position:sticky;bottom:0;z-index:5;padding:12px 20px}
+  .form-section-divider{margin:16px -20px 16px}
+  .modal-foot .btn{flex:1;justify-content:center;padding:12px 16px;font-size:14px}
   @keyframes slideSheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
   .toast{bottom:76px;right:12px;left:12px;max-width:none}
   .agenda-view-btn{display:none !important}
@@ -755,33 +764,42 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <!-- MODAL ATENDIMENTO -->
 <div id="modal-atend" class="modal-bg" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal">
+    <div class="modal-drag-handle"></div>
     <div class="modal-head">
       <h3 id="modal-atend-title">Novo atendimento</h3>
       <button class="btn-ghost" style="padding:4px;border:none;background:none;cursor:pointer;color:var(--text2)" onclick="document.getElementById('modal-atend').classList.remove('open')"><i class="ti ti-x" style="font-size:18px"></i></button>
     </div>
     <div class="modal-body">
+
+      <div class="form-section-label">Paciente</div>
       <div class="form-group">
         <label>Paciente *</label>
         <select id="atend-paciente" onchange="preencherValorPadrao()"></select>
       </div>
-      <div class="form-group">
+      <div class="form-group" style="margin-bottom:0">
         <label>Tipo de sessão *</label>
         <select id="atend-pacote" required onchange="aoSelecionarPacote()">
           <option value="">Sessão avulsa</option>
         </select>
       </div>
+
+      <div class="form-section-divider"></div>
+      <div class="form-section-label">Data e horário</div>
       <div class="form-group"><label>Data do atendimento *</label><input type="date" id="atend-data"></div>
       <div class="horario-row">
-        <div class="form-group" style="flex:1"><label>Horário início</label><input type="time" id="atend-hora"></div>
+        <div class="form-group" style="flex:1;margin-bottom:0"><label>Horário início</label><input type="time" id="atend-hora"></div>
         <div class="horario-sep">–</div>
-        <div class="form-group" style="flex:1"><label>Horário fim</label><input type="time" id="atend-hora-fim"></div>
+        <div class="form-group" style="flex:1;margin-bottom:0"><label>Horário fim</label><input type="time" id="atend-hora-fim"></div>
       </div>
+
+      <div class="form-section-divider"></div>
+      <div class="form-section-label">Pagamento</div>
       <div class="fg2">
         <div class="form-group"><label>Valor da sessão (R$) *</label><input type="number" id="atend-valor" min="0" step="0.01" placeholder="0,00" oninput="calcSaldo()"></div>
         <div class="form-group"><label>Valor recebido (R$)</label><input type="number" id="atend-recebido" min="0" step="0.01" placeholder="0,00" oninput="calcSaldo()"></div>
       </div>
       <div class="fg2">
-        <div class="form-group"><label>Método de pagamento</label>
+        <div class="form-group"><label>Método</label>
           <select id="atend-metodo">
             <option>Pix</option><option>Dinheiro</option><option>Cartão de crédito</option>
             <option>Cartão de débito</option><option>Transferência</option><option>Convênio</option><option>Outro</option>
@@ -797,15 +815,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           </select>
         </div>
       </div>
-      <div id="saldo-box" style="display:none;background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--amber-text);margin-bottom:4px">
+      <div id="saldo-box" style="display:none;background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--amber-text);margin-bottom:12px">
         <strong>Saldo restante: <span id="saldo-val">R$ 0,00</span></strong>
       </div>
-      <div class="form-group">
+      <div class="form-group" style="margin-bottom:0">
         <label>Data de vencimento</label>
         <input type="date" id="atend-vencimento" title="Deixe em branco se já pago">
       </div>
 
-      <div class="form-group"><label>Observações clínicas</label><textarea id="atend-obs" placeholder="Evolução, procedimentos, observações..."></textarea></div>
+      <div class="form-section-divider"></div>
+      <div class="form-group" style="margin-bottom:0"><label>Observações clínicas</label><textarea id="atend-obs" placeholder="Evolução, procedimentos, observações..."></textarea></div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="document.getElementById('modal-atend').classList.remove('open')">Cancelar</button>
