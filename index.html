@@ -2544,33 +2544,32 @@ function renderAgendaSemanalMobile(){
   });
 
   const cal=document.getElementById('agenda-cal');
-  cal.style.overflow='auto';
+  cal.style.overflow='visible';
 
-  // header dias
-  let html=`<div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border);min-width:480px">
-    <div style="display:flex;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0;z-index:10">
-      <div style="width:38px;flex-shrink:0"></div>
+  let html=`<div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border)">
+    <div style="display:flex;border-bottom:2px solid var(--border);background:var(--surface2);position:sticky;top:52px;z-index:10">
+      <div style="width:28px;flex-shrink:0"></div>
       ${dias.map(d=>{
         const ds=dateStr(d);
         const isHoje=ds===hojeStr;
         const cnt=(byDate[ds]||[]).length;
-        return `<div style="flex:1;text-align:center;padding:8px 2px 6px;border-left:1px solid var(--border);cursor:pointer;background:${isHoje?'rgba(16,185,129,0.07)':'transparent'}" onclick="agendaIrParaDia&&agendaIrParaDia('${ds}')">
-          <div style="font-size:9px;font-weight:700;color:${isHoje?'var(--green)':'var(--text3)'};letter-spacing:.05em">${DOWS[d.getDay()]}</div>
-          <div style="width:26px;height:26px;border-radius:50%;margin:2px auto 0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:${isHoje?'var(--green)':'transparent'};color:${isHoje?'#fff':'var(--text)'}">${d.getDate()}</div>
-          ${cnt?`<div style="font-size:8px;color:var(--green);font-weight:700;margin-top:2px">${cnt}</div>`:`<div style="height:12px"></div>`}
+        return `<div style="flex:1;text-align:center;padding:6px 1px 4px;border-left:1px solid var(--border);background:${isHoje?'rgba(16,185,129,0.08)':'transparent'}">
+          <div style="font-size:8px;font-weight:700;color:${isHoje?'var(--green)':'var(--text3)'};letter-spacing:.04em;text-transform:uppercase">${DOWS[d.getDay()]}</div>
+          <div style="width:22px;height:22px;border-radius:50%;margin:2px auto 0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:${isHoje?'var(--green)':'transparent'};color:${isHoje?'#fff':'var(--text)'}">${d.getDate()}</div>
+          <div style="height:6px;display:flex;align-items:center;justify-content:center;margin-top:1px">${cnt?`<div style="width:${Math.min(cnt,4)*4}px;height:4px;border-radius:2px;background:var(--green)"></div>`:''}</div>
         </div>`;
       }).join('')}
     </div>
-    <div style="display:flex;overflow-y:auto;max-height:calc(100vh - 220px)">
-      <div style="width:38px;flex-shrink:0;position:relative;height:${totalPx}px;border-right:1px solid var(--border)">
-        ${Array.from({length:totalH},(_,i)=>`<div style="position:absolute;top:${i*HOUR_H+3}px;right:4px;font-size:9px;color:var(--text3);font-weight:500;text-align:right">${String(START_H+i).padStart(2,'0')}</div>`).join('')}
+    <div style="display:flex;overflow-y:auto;max-height:calc(100vh - 200px)">
+      <div style="width:28px;flex-shrink:0;position:relative;height:${totalPx}px;border-right:1px solid var(--border)">
+        ${Array.from({length:totalH},(_,i)=>`<div style="position:absolute;top:${i*HOUR_H+2}px;right:2px;font-size:8px;color:var(--text3);font-weight:600;text-align:right;line-height:1">${String(START_H+i).padStart(2,'0')}</div>`).join('')}
       </div>
       ${dias.map(d=>{
         const ds=dateStr(d);const isHoje=ds===hojeStr;
-        return `<div style="flex:1;position:relative;height:${totalPx}px;border-left:1px solid var(--border);background:${isHoje?'rgba(16,185,129,0.018)':''}">
+        return `<div style="flex:1;position:relative;height:${totalPx}px;border-left:1px solid var(--border);background:${isHoje?'rgba(16,185,129,0.015)':''}">
           ${Array.from({length:totalH},(_,i)=>`
-            <div style="position:absolute;top:${i*HOUR_H}px;left:0;right:0;height:${HOUR_H}px;border-top:1px solid var(--border)" onclick="agendaClicar('${ds}','${String(START_H+i).padStart(2,'0')}:00')"></div>
-            <div style="position:absolute;top:${i*HOUR_H+HOUR_H/2}px;left:0;right:0;height:1px;border-top:1px dashed var(--border);opacity:.25;pointer-events:none"></div>
+            <div style="position:absolute;top:${i*HOUR_H}px;left:0;right:0;height:${HOUR_H}px;border-top:1px solid var(--border);cursor:pointer" onclick="openModalAtend()"></div>
+            <div style="position:absolute;top:${i*HOUR_H+HOUR_H/2}px;left:0;right:0;height:1px;border-top:1px dashed var(--border);opacity:.2;pointer-events:none"></div>
           `).join('')}
           ${(byDate[ds]||[]).map(a=>{
             if(!a.hora) return '';
@@ -2578,13 +2577,12 @@ function renderAgendaSemanalMobile(){
             if(hh<START_H||hh>=END_H) return '';
             const top=((hh-START_H)*60+mm)/60*HOUR_H;
             let height=HOUR_H-2;
-            if(a.horaFim){const [fh,fm]=a.horaFim.split(':').map(Number);height=Math.max(20,((fh-hh)*60+(fm-mm))/60*HOUR_H-2);}
+            if(a.horaFim){const [fh,fm]=a.horaFim.split(':').map(Number);height=Math.max(18,((fh-hh)*60+(fm-mm))/60*HOUR_H-2);}
             const cor=corStatus(a);
             const nome=nomePac(a.pacienteId).split(' ')[0];
             return `<div onclick="event.stopPropagation();editAtend('${a.id}')"
-              style="position:absolute;top:${top+1}px;height:${height}px;left:2px;right:2px;background:${cor};color:#fff;border-radius:5px;padding:2px 4px;font-size:10px;font-weight:700;overflow:hidden;cursor:pointer;line-height:1.25;box-shadow:0 2px 6px rgba(0,0,0,0.18)">
+              style="position:absolute;top:${top+1}px;height:${height}px;left:1px;right:1px;background:${cor};color:#fff;border-radius:4px;padding:2px 3px;font-size:9px;font-weight:700;overflow:hidden;cursor:pointer;line-height:1.2;box-shadow:0 1px 4px rgba(0,0,0,0.2)">
               ${nome}
-              ${height>=36&&a.hora?`<div style="font-size:9px;opacity:.85;margin-top:1px">${a.hora}${a.horaFim?' –'+a.horaFim:''}</div>`:''}
             </div>`;
           }).join('')}
         </div>`;
