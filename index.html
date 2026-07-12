@@ -267,10 +267,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   .section-hdr h2{font-size:17px}
   .card{padding:16px}
   .modal-bg{padding:0;align-items:flex-end}
-  .modal{border-radius:20px 20px 0 0;width:100%;margin:0;max-height:92vh;overflow-y:auto;animation:slideSheet 0.25s cubic-bezier(0.34,1.1,0.64,1)}
+  .modal{border-radius:20px 20px 0 0;width:100%;margin:0;max-height:92vh;overflow-y:auto;overflow-x:hidden;animation:slideSheet 0.25s cubic-bezier(0.34,1.1,0.64,1);box-sizing:border-box}
   .modal-drag-handle{display:block;width:36px;height:4px;border-radius:2px;background:var(--border2);margin:12px auto 4px}
-  .modal-head{border-radius:0;padding:12px 20px 14px}
-  .modal-body{padding:18px 20px}
+  .modal-head{border-radius:0;padding:14px 20px}
+  .modal-body{padding:16px 20px 20px}
+  .modal-body .form-group input,.modal-body .form-group select,.modal-body .form-group textarea{box-sizing:border-box;width:100%;max-width:100%}
+  .horario-row .form-group{width:100%;flex:none}
   .modal-foot{position:sticky;bottom:0;z-index:5;padding:12px 20px}
   .form-section-divider{margin:16px -20px 16px}
   .modal-foot .btn{flex:1;justify-content:center;padding:12px 16px;font-size:14px}
@@ -2570,42 +2572,92 @@ function renderAgenda(){
 }
 
 function renderAgendaDiariaMobile(){
-  const hojeStr=dateStr(new Date());
+  const agora=new Date();
+  const hojeStr=dateStr(agora);
   const ds=dateStr(agendaBase);
+  const isHoje=ds===hojeStr;
   const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const DOWS=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const DOWS=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
   document.getElementById('agenda-periodo').textContent=
     `${DOWS[agendaBase.getDay()]}, ${agendaBase.getDate()} de ${MESES[agendaBase.getMonth()]}`;
+
+  const HOUR_H=64, START_H=7, END_H=21;
+  const totalH=END_H-START_H;
+  const totalPx=totalH*HOUR_H;
+  const TIME_COL=38;
+
+  const nowTop=((agora.getHours()-START_H)*60+agora.getMinutes())/60*HOUR_H;
+  const showNow=isHoje&&agora.getHours()>=START_H&&agora.getHours()<END_H;
+
   const events=atendimentos.filter(a=>{
     if(a.data!==ds) return false;
     if(agendaFiltro) return nomePac(a.pacienteId).toLowerCase().includes(agendaFiltro);
     return true;
-  }).sort((a,b)=>(a.hora||'99').localeCompare(b.hora||'99'));
+  });
+
   const cal=document.getElementById('agenda-cal');
-  if(!events.length){
-    cal.innerHTML=`<div class="card" style="text-align:center;padding:40px 20px;color:var(--text3)">
-      <i class="ti ti-calendar-off" style="font-size:36px;opacity:.3;display:block;margin-bottom:10px"></i>
-      <p style="margin:0">Nenhum atendimento neste dia</p>
-    </div>`;
-    return;
-  }
-  cal.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
-    ${events.map(a=>{
-      const cor=corStatus(a);
-      return `<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer" onclick="editAtend('${a.id}')">
-        <div style="width:4px;align-self:stretch;border-radius:4px;background:${cor};flex-shrink:0"></div>
-        <div style="text-align:center;min-width:42px;flex-shrink:0">
-          <div style="font-size:14px;font-weight:700;color:var(--text)">${a.hora||'—'}</div>
-          ${a.horaFim?`<div style="font-size:10px;color:var(--text3)">${a.horaFim}</div>`:''}
-        </div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(nomePac(a.pacienteId))}</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px">${a.metodo||''}</div>
-        </div>
-        <div>${badgeHtml(statusComVencimento(a))}</div>
-      </div>`;
-    }).join('')}
+  cal.style.cssText='overflow:visible;padding:0;';
+
+  let html=`<div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border)">
+    <div style="display:flex;overflow-y:auto;max-height:calc(100svh - 200px);-webkit-overflow-scrolling:touch" id="gcal-scroll-dia">
+      <div style="width:${TIME_COL}px;flex-shrink:0;position:relative;height:${totalPx}px;border-right:1px solid var(--border)">
+        ${Array.from({length:totalH},(_,i)=>`
+          <div style="position:absolute;top:${i*HOUR_H-7}px;left:0;right:0;text-align:right;padding-right:6px;font-size:10px;color:var(--text3);font-weight:500;line-height:1;white-space:nowrap">
+            ${i===0?'':`${String(START_H+i).padStart(2,'0')}h`}
+          </div>`).join('')}
+      </div>
+      <div style="flex:1;position:relative;height:${totalPx}px;background:${isHoje?'rgba(16,185,129,0.015)':''}">
+        ${Array.from({length:totalH},(_,i)=>`
+          <div style="position:absolute;top:${i*HOUR_H}px;left:0;right:0;height:${HOUR_H}px;border-top:1px solid var(--border);cursor:pointer" onclick="agendaClicarHora('${ds}','${String(START_H+i).padStart(2,'0')}:00')"></div>
+          <div style="position:absolute;top:${i*HOUR_H+HOUR_H/2}px;left:0;right:0;border-top:1px dashed rgba(0,0,0,.06);pointer-events:none"></div>
+        `).join('')}
+        ${showNow?`
+          <div style="position:absolute;top:${nowTop}px;left:0;right:0;height:2px;background:#ea4335;z-index:5;pointer-events:none">
+            <div style="position:absolute;left:-4px;top:-4px;width:10px;height:10px;border-radius:50%;background:#ea4335"></div>
+          </div>`:''}
+        ${events.map(a=>{
+          if(!a.hora) return '';
+          const [hh,mm]=a.hora.split(':').map(Number);
+          if(hh<START_H||hh>=END_H) return '';
+          const top=((hh-START_H)*60+mm)/60*HOUR_H;
+          let height=HOUR_H-3;
+          if(a.horaFim){const [fh,fm]=a.horaFim.split(':').map(Number);height=Math.max(24,((fh-hh)*60+(fm-mm))/60*HOUR_H-3);}
+          const cor=corStatus(a);
+          const nome=nomePac(a.pacienteId);
+          return `<div onclick="editAtend('${a.id}')"
+            style="position:absolute;top:${top+2}px;height:${height}px;left:6px;right:6px;background:${cor};color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15)">
+            <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(nome)}</div>
+            ${height>=36?`<div style="font-size:11px;opacity:.85;margin-top:2px">${a.hora}${a.horaFim?' – '+a.horaFim:''}</div>`:''}
+            ${height>=52?`<div style="font-size:11px;opacity:.75;margin-top:1px">${a.metodo||''}</div>`:''}
+          </div>`;
+        }).join('')}
+        ${!events.length?`<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:var(--text3);pointer-events:none">
+          <i class="ti ti-calendar-off" style="font-size:32px;opacity:.25;display:block;margin-bottom:8px"></i>
+          <div style="font-size:13px">Sem atendimentos</div>
+        </div>`:''}
+      </div>
+    </div>
   </div>`;
+  cal.innerHTML=html;
+
+  requestAnimationFrame(()=>{
+    const sc=document.getElementById('gcal-scroll-dia');
+    if(sc){
+      const scrollTo=showNow?Math.max(0,nowTop-100):(8-START_H)*HOUR_H;
+      sc.scrollTop=scrollTo;
+    }
+  });
+}
+
+function agendaClicarHora(data,hora){
+  openModalAtend();
+  setTimeout(()=>{
+    document.getElementById('atend-data').value=data;
+    if(hora) document.getElementById('atend-hora').value=hora;
+    const [hh,mm]=hora.split(':').map(Number);
+    const fimH=String(hh+1).padStart(2,'0');
+    document.getElementById('atend-hora-fim').value=`${fimH}:${String(mm).padStart(2,'0')}`;
+  },50);
 }
 
 function renderAgendaMensalMobile(){
@@ -2677,17 +2729,17 @@ function renderAgendaSemanalMobile(){
   const cal=document.getElementById('agenda-cal');
   cal.style.cssText='overflow:visible;padding:0;';
 
-  // cabeçalho sticky
-  let hdr=`<div id="gcal-hdr" style="display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:20;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+  // cabeçalho sticky — abaixo do topbar (52px) + tabs (44px)
+  let hdr=`<div id="gcal-hdr" style="display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:96px;z-index:20;box-shadow:0 1px 4px rgba(0,0,0,.06)">
     <div style="width:${TIME_COL}px;flex-shrink:0"></div>
     ${dias.map(d=>{
       const ds=dateStr(d);
       const isHoje=ds===hojeStr;
       const cnt=(byDate[ds]||[]).length;
-      return `<div style="flex:1;text-align:center;padding:5px 1px 6px;min-width:0">
-        <div style="font-size:9px;font-weight:600;color:${isHoje?'var(--green)':'var(--text3)'};letter-spacing:.03em;text-transform:uppercase;line-height:1">${DOWS[d.getDay()]}</div>
-        <div style="width:24px;height:24px;border-radius:50%;margin:3px auto 2px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:${isHoje?'var(--green)':'transparent'};color:${isHoje?'#fff':'var(--text)'}">${d.getDate()}</div>
-        <div style="display:flex;justify-content:center;gap:2px;min-height:4px">${Array.from({length:Math.min(cnt,3)},()=>`<div style="width:4px;height:4px;border-radius:50%;background:var(--green)"></div>`).join('')}</div>
+      return `<div style="flex:1;text-align:center;padding:6px 1px 5px;min-width:0;cursor:pointer;border-left:1px solid var(--border);background:${isHoje?'rgba(16,185,129,0.06)':''}" onclick="agendaBase=new Date('${ds}T12:00:00');agendaView='diario';renderAgenda()">
+        <div style="font-size:9px;font-weight:700;color:${isHoje?'var(--green)':'var(--text3)'};letter-spacing:.04em;text-transform:uppercase;line-height:1">${DOWS[d.getDay()]}</div>
+        <div style="width:26px;height:26px;border-radius:50%;margin:3px auto 2px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:${isHoje?'var(--green)':'transparent'};color:${isHoje?'#fff':'var(--text)'}">${d.getDate()}</div>
+        <div style="display:flex;justify-content:center;gap:2px;min-height:5px">${Array.from({length:Math.min(cnt,3)},(_,i)=>`<div style="width:4px;height:4px;border-radius:50%;background:${cnt>0?'var(--green)':'transparent'}"></div>`).join('')}</div>
       </div>`;
     }).join('')}
   </div>`;
