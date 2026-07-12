@@ -253,6 +253,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   .modal{border-radius:var(--radius-xl) var(--radius-xl) 0 0;width:100%;margin:0;max-height:92vh;overflow-y:auto;animation:slideSheet 0.25s cubic-bezier(0.34,1.1,0.64,1)}
   @keyframes slideSheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
   .toast{bottom:76px;right:12px;left:12px;max-width:none}
+  .agenda-view-btn{display:none !important}
   .bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;height:62px;background:var(--surface);border-top:1px solid var(--border);z-index:50;box-shadow:0 -4px 20px rgba(15,23,42,0.08)}
   .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;color:var(--text3);font-size:9px;font-weight:600;font-family:inherit;text-transform:uppercase;letter-spacing:0.04em;padding:8px 4px;transition:color 0.12s}
   .bn-item i{font-size:22px;transition:color 0.12s}
@@ -527,9 +528,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
             </div>
             <div style="flex:1"></div>
             <div style="display:flex;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:2px;gap:2px">
-              <button id="vbtn-diario" class="btn btn-sm" onclick="setAgendaView('diario')" style="padding:4px 12px;font-size:12px">Diário</button>
-              <button id="vbtn-semanal" class="btn btn-sm" onclick="setAgendaView('semanal')" style="padding:4px 12px;font-size:12px">Semanal</button>
-              <button id="vbtn-mensal" class="btn btn-sm" onclick="setAgendaView('mensal')" style="padding:4px 12px;font-size:12px">Mensal</button>
+              <button id="vbtn-diario" class="btn btn-sm agenda-view-btn" onclick="setAgendaView('diario')" style="padding:4px 12px;font-size:12px">Diário</button>
+              <button id="vbtn-semanal" class="btn btn-sm agenda-view-btn" onclick="setAgendaView('semanal')" style="padding:4px 12px;font-size:12px">Semanal</button>
+              <button id="vbtn-mensal" class="btn btn-sm agenda-view-btn" onclick="setAgendaView('mensal')" style="padding:4px 12px;font-size:12px">Mensal</button>
             </div>
           </div>
           <div id="agenda-cal" style="flex:1;overflow:auto;min-height:0;padding-bottom:20px"></div>
@@ -1424,32 +1425,63 @@ function renderPagamentos(){
   const empty=document.getElementById('pay-empty');
   if(!list.length){tbody.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
-  tbody.innerHTML=list.map(a=>`
-    <tr style="${a.pacoteId?'opacity:0.85;background:var(--bg2)':''}">
-      <td>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="pav" style="width:30px;height:30px;font-size:10px">${iniciais(nomePac(a.pacienteId))}</div>
-          <div>
-            <span style="font-weight:500">${esc(nomePac(a.pacienteId))}</span>
-            ${a.pacoteId?`<div style="font-size:11px;color:var(--green);display:flex;align-items:center;gap:3px"><i class="ti ti-package"></i>${esc(pacotes.find(x=>x.id===a.pacoteId)?.nome||'Pacote')}</div>`:''}
-          </div>
+  const mobile=window.innerWidth<=768;
+  // toggle table vs cards
+  const tableWrap=tbody.closest('[style*="overflow-x"]');
+  let cardList=document.getElementById('pay-card-list');
+  if(!cardList){
+    cardList=document.createElement('div');
+    cardList.id='pay-card-list';
+    tableWrap.parentNode.insertBefore(cardList,tableWrap.nextSibling);
+  }
+  if(mobile){
+    tableWrap.style.display='none';
+    cardList.innerHTML=list.map(a=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border)">
+        <div class="pav" style="width:36px;height:36px;font-size:11px;flex-shrink:0">${iniciais(nomePac(a.pacienteId))}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px">${esc(nomePac(a.pacienteId))}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${fmtData(a.data)}${a.hora?' · '+a.hora:''} · ${a.metodo||'—'}</div>
         </div>
-      </td>
-      <td>${fmtData(a.data)}${a.hora?' <span style="color:var(--text3)">'+a.hora+'</span>':''}</td>
-      <td style="text-align:right;font-weight:600">
-        ${brl(a.valor)}
-        ${a.valorRecebido>0&&a.valorRecebido<a.valor?`<div style="font-size:11px;color:var(--amber);font-weight:500">+${brl(a.valorRecebido)} · saldo ${brl(a.valor-a.valorRecebido)}</div>`:''}
-      </td>
-      <td><span style="color:var(--text2)">${a.metodo||'—'}</span></td>
-      <td>${badgeHtml(statusComVencimento(a))}</td>
-      <td style="text-align:right">
-        ${a.pacoteId
-          ? `<button class="btn btn-ghost btn-sm" title="Ver pacote" onclick="navTo('pacotes',null)" style="color:var(--green)"><i class="ti ti-package"></i></button>`
-          : `<button class="btn btn-ghost btn-sm" title="Histórico de pagamentos" onclick="abrirHistoricoPag('${a.id}')" style="color:var(--green)"><i class="ti ti-history"></i></button>`}
-        <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
-        <button class="btn btn-ghost btn-sm" title="Remover" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
-      </td>
-    </tr>`).join('');
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-weight:700;font-size:14px">${brl(a.valor)}</div>
+          <div style="margin-top:4px">${badgeHtml(statusComVencimento(a))}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
+          <button class="btn btn-ghost btn-sm" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`).join('');
+  } else {
+    tableWrap.style.display='';
+    cardList.innerHTML='';
+    tbody.innerHTML=list.map(a=>`
+      <tr style="${a.pacoteId?'opacity:0.85;':''}">
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="pav" style="width:30px;height:30px;font-size:10px">${iniciais(nomePac(a.pacienteId))}</div>
+            <div>
+              <span style="font-weight:500">${esc(nomePac(a.pacienteId))}</span>
+              ${a.pacoteId?`<div style="font-size:11px;color:var(--green);display:flex;align-items:center;gap:3px"><i class="ti ti-package"></i>${esc(pacotes.find(x=>x.id===a.pacoteId)?.nome||'Pacote')}</div>`:''}
+            </div>
+          </div>
+        </td>
+        <td>${fmtData(a.data)}${a.hora?' <span style="color:var(--text3)">'+a.hora+'</span>':''}</td>
+        <td style="text-align:right;font-weight:600">
+          ${brl(a.valor)}
+          ${a.valorRecebido>0&&a.valorRecebido<a.valor?`<div style="font-size:11px;color:var(--amber);font-weight:500">+${brl(a.valorRecebido)} · saldo ${brl(a.valor-a.valorRecebido)}</div>`:''}
+        </td>
+        <td><span style="color:var(--text2)">${a.metodo||'—'}</span></td>
+        <td>${badgeHtml(statusComVencimento(a))}</td>
+        <td style="text-align:right">
+          ${a.pacoteId
+            ? `<button class="btn btn-ghost btn-sm" title="Ver pacote" onclick="navTo('pacotes',null)" style="color:var(--green)"><i class="ti ti-package"></i></button>`
+            : `<button class="btn btn-ghost btn-sm" title="Histórico de pagamentos" onclick="abrirHistoricoPag('${a.id}')" style="color:var(--green)"><i class="ti ti-history"></i></button>`}
+          <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
+          <button class="btn btn-ghost btn-sm" title="Remover" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+        </td>
+      </tr>`).join('');
+  }
 }
 
 function renderAtendimentos(){
@@ -1463,23 +1495,54 @@ function renderAtendimentos(){
   const empty=document.getElementById('at-empty');
   if(!list.length){tbody.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
-  tbody.innerHTML=list.map(a=>`
-    <tr>
-      <td><div style="display:flex;align-items:center;gap:8px"><div class="pav" style="width:30px;height:30px;font-size:10px">${iniciais(nomePac(a.pacienteId))}</div><span style="font-weight:500">${esc(nomePac(a.pacienteId))}</span></div></td>
-      <td>${fmtData(a.data)}</td>
-      <td>${a.hora||'<span style="color:var(--text3)">—</span>'}</td>
-      <td>${a.metodo||'—'}</td>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">${a.obs||''}</td>
-      <td style="text-align:right;font-weight:600">${brl(a.valor)}</td>
-      <td>
-        ${badgeHtml(statusComVencimento(a))}
-        ${a.pacoteId?`<div style="font-size:11px;color:var(--green);margin-top:3px;display:flex;align-items:center;gap:3px"><i class="ti ti-package"></i>${esc(pacotes.find(x=>x.id===a.pacoteId)?.nome||'Pacote')}</div>`:''}
-      </td>
-      <td style="text-align:right">
-        <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
-        <button class="btn btn-ghost btn-sm" title="Remover" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
-      </td>
-    </tr>`).join('');
+  const mobile=window.innerWidth<=768;
+  const tableWrap=tbody.closest('[style*="overflow-x"]');
+  let cardList=document.getElementById('at-card-list');
+  if(!cardList){
+    cardList=document.createElement('div');
+    cardList.id='at-card-list';
+    tableWrap.parentNode.insertBefore(cardList,tableWrap.nextSibling);
+  }
+  if(mobile){
+    tableWrap.style.display='none';
+    cardList.innerHTML=list.map(a=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border)">
+        <div class="pav" style="width:36px;height:36px;font-size:11px;flex-shrink:0">${iniciais(nomePac(a.pacienteId))}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px">${esc(nomePac(a.pacienteId))}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${fmtData(a.data)}${a.hora?' · '+a.hora:''}</div>
+          ${a.obs?`<div style="font-size:12px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">${esc(a.obs)}</div>`:''}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-weight:700;font-size:14px">${brl(a.valor)}</div>
+          <div style="margin-top:4px">${badgeHtml(statusComVencimento(a))}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
+          <button class="btn btn-ghost btn-sm" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`).join('');
+  } else {
+    tableWrap.style.display='';
+    cardList.innerHTML='';
+    tbody.innerHTML=list.map(a=>`
+      <tr>
+        <td><div style="display:flex;align-items:center;gap:8px"><div class="pav" style="width:30px;height:30px;font-size:10px">${iniciais(nomePac(a.pacienteId))}</div><span style="font-weight:500">${esc(nomePac(a.pacienteId))}</span></div></td>
+        <td>${fmtData(a.data)}</td>
+        <td>${a.hora||'<span style="color:var(--text3)">—</span>'}</td>
+        <td>${a.metodo||'—'}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">${a.obs||''}</td>
+        <td style="text-align:right;font-weight:600">${brl(a.valor)}</td>
+        <td>
+          ${badgeHtml(statusComVencimento(a))}
+          ${a.pacoteId?`<div style="font-size:11px;color:var(--green);margin-top:3px;display:flex;align-items:center;gap:3px"><i class="ti ti-package"></i>${esc(pacotes.find(x=>x.id===a.pacoteId)?.nome||'Pacote')}</div>`:''}
+        </td>
+        <td style="text-align:right">
+          <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
+          <button class="btn btn-ghost btn-sm" title="Remover" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+        </td>
+      </tr>`).join('');
+  }
 }
 
 // ── PACIENTES ────────────────────────────────────────────
@@ -1493,31 +1556,44 @@ function saldoPaciente(pid){
 function renderPacientes(){
   const el=document.getElementById('pac-list');
   if(!pacientes.length){el.innerHTML='<div class="empty"><i class="ti ti-users"></i><p>Nenhum paciente cadastrado</p></div>';return;}
-  el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
-    <table class="pay-table">
-      <thead><tr><th>Paciente</th><th>Diagnóstico</th><th style="text-align:right">Valor/Sessão</th><th style="text-align:right">Sessões acumuladas</th><th>Telefone</th><th></th></tr></thead>
-      <tbody>${pacientes.map(p=>{
-        const sess=atendimentos.filter(a=>a.pacienteId===p.id);
-        const totalPago=sess.reduce((s,a)=>{
-          if(a.status==='pago') return s+parseFloat(a.valor||0);
-          if(a.status==='parcial') return s+parseFloat(a.valorRecebido||0);
-          return s;
-        },0);
-        const saldo=saldoPaciente(p.id);
-        return `<tr>
-          <td><div style="display:flex;align-items:center;gap:10px"><div class="pav">${iniciais(p.nome)}</div><div><div style="font-weight:600">${esc(p.nome)}</div><div style="font-size:12px;color:var(--text3)">${p.nasc?calcIdade(p.nasc)+' anos':''}</div></div></div></td>
-          <td style="color:var(--text2)">${esc(p.diag)||'—'}</td>
-          <td style="text-align:right;font-weight:600;color:var(--green)">${p.valorPadrao?brl(p.valorPadrao):'—'}</td>
-          <td style="text-align:right;font-weight:500">${sess.length}</td>
-          <td>${p.tel||'—'}</td>
-          <td style="text-align:right">
-            <button class="btn btn-ghost btn-sm" onclick="verPaciente('${p.id}')"><i class="ti ti-eye"></i></button>
-            <button class="btn btn-ghost btn-sm" onclick="editPaciente('${p.id}')"><i class="ti ti-edit"></i></button>
-            <button class="btn btn-ghost btn-sm" onclick="delPaciente('${p.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
-          </td>
-        </tr>`;}).join('')}
-      </tbody>
-    </table></div>`;
+  const isMobile=window.innerWidth<=768;
+  if(isMobile){
+    el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">${pacientes.map(p=>{
+      const sess=atendimentos.filter(a=>a.pacienteId===p.id);
+      return `<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)">
+        <div class="pav" style="flex-shrink:0">${iniciais(p.nome)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px">${esc(p.nome)}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${esc(p.diag)||'—'}${p.nasc?' · '+calcIdade(p.nasc)+' anos':''}</div>
+          <div style="font-size:12px;color:var(--green);font-weight:600;margin-top:3px">${p.valorPadrao?brl(p.valorPadrao)+'/sessão':''} <span style="color:var(--text3);font-weight:400">${sess.length} sess.</span></div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn btn-ghost btn-sm" onclick="verPaciente('${p.id}')"><i class="ti ti-eye"></i></button>
+          <button class="btn btn-ghost btn-sm" onclick="editPaciente('${p.id}')"><i class="ti ti-edit"></i></button>
+          <button class="btn btn-ghost btn-sm" onclick="delPaciente('${p.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`;}).join('')}</div>`;
+  } else {
+    el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
+      <table class="pay-table">
+        <thead><tr><th>Paciente</th><th>Diagnóstico</th><th style="text-align:right">Valor/Sessão</th><th style="text-align:right">Sessões</th><th>Telefone</th><th></th></tr></thead>
+        <tbody>${pacientes.map(p=>{
+          const sess=atendimentos.filter(a=>a.pacienteId===p.id);
+          return `<tr>
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="pav">${iniciais(p.nome)}</div><div><div style="font-weight:600">${esc(p.nome)}</div><div style="font-size:12px;color:var(--text3)">${p.nasc?calcIdade(p.nasc)+' anos':''}</div></div></div></td>
+            <td style="color:var(--text2)">${esc(p.diag)||'—'}</td>
+            <td style="text-align:right;font-weight:600;color:var(--green)">${p.valorPadrao?brl(p.valorPadrao):'—'}</td>
+            <td style="text-align:right;font-weight:500">${sess.length}</td>
+            <td>${p.tel||'—'}</td>
+            <td style="text-align:right">
+              <button class="btn btn-ghost btn-sm" onclick="verPaciente('${p.id}')"><i class="ti ti-eye"></i></button>
+              <button class="btn btn-ghost btn-sm" onclick="editPaciente('${p.id}')"><i class="ti ti-edit"></i></button>
+              <button class="btn btn-ghost btn-sm" onclick="delPaciente('${p.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+            </td>
+          </tr>`;}).join('')}
+        </tbody>
+      </table></div>`;
+  }
 }
 
 function abrirPagamentoPaciente(pid){
@@ -2422,10 +2498,57 @@ function semanaProxima(){ agendaNavProximo(); }
 
 function renderAgenda(){
   if(!agendaBase){ agendaBase = new Date(); }
+  const mobile=window.innerWidth<=768;
+  // no mobile: força visão diária e esconde painel direito
+  const rightPanel=document.getElementById('agenda-right-panel');
+  if(rightPanel) rightPanel.style.display=mobile?'none':'';
+  if(mobile){ agendaView='diario'; atualizarBotoesView(); return renderAgendaDiariaMobile(); }
   atualizarBotoesView();
   if(agendaView==='diario') return renderAgendaDiaria();
   if(agendaView==='semanal') return renderAgendaSemanal();
   return renderAgendaMensal();
+}
+
+function renderAgendaDiariaMobile(){
+  const hojeStr=dateStr(new Date());
+  const ds=dateStr(agendaBase);
+  const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const DOWS=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  document.getElementById('agenda-periodo').textContent=
+    `${DOWS[agendaBase.getDay()]}, ${agendaBase.getDate()} de ${MESES[agendaBase.getMonth()]}`;
+
+  const events=atendimentos.filter(a=>{
+    if(a.data!==ds) return false;
+    if(agendaFiltro) return nomePac(a.pacienteId).toLowerCase().includes(agendaFiltro);
+    return true;
+  }).sort((a,b)=>(a.hora||'99').localeCompare(b.hora||'99'));
+
+  const cal=document.getElementById('agenda-cal');
+  if(!events.length){
+    cal.innerHTML=`<div class="card" style="text-align:center;padding:40px 20px;color:var(--text3)">
+      <i class="ti ti-calendar-off" style="font-size:36px;opacity:.3;display:block;margin-bottom:10px"></i>
+      <p>Nenhum atendimento neste dia</p>
+      <button class="btn btn-primary" style="margin-top:16px" onclick="openModalAtend()"><i class="ti ti-plus"></i> Novo atendimento</button>
+    </div>`;
+    return;
+  }
+  cal.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
+    ${events.map(a=>{
+      const cor=corStatus(a);
+      return `<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)" onclick="editAtend('${a.id}')">
+        <div style="width:4px;align-self:stretch;border-radius:4px;background:${cor};flex-shrink:0"></div>
+        <div style="text-align:center;min-width:40px;flex-shrink:0">
+          <div style="font-size:15px;font-weight:700;color:var(--text)">${a.hora||'—'}</div>
+          ${a.horaFim?`<div style="font-size:10px;color:var(--text3)">${a.horaFim}</div>`:''}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px">${esc(nomePac(a.pacienteId))}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${a.metodo||''}${a.obs?' · '+a.obs:''}</div>
+        </div>
+        <div>${badgeHtml(statusComVencimento(a))}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
 }
 
 // ── VISÃO DIÁRIA ──────────────────────────────────────────
