@@ -187,6 +187,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .form-group textarea{resize:vertical;min-height:72px}
 .fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.horario-row{display:flex;align-items:flex-end;gap:8px}
+.horario-sep{font-size:18px;font-weight:300;color:var(--text3);padding-bottom:10px;flex-shrink:0}
 
 /* ── TOAST */
 .toast{position:fixed;bottom:24px;right:24px;z-index:300;background:#0b1120;color:#f8fafc;padding:12px 18px;border-radius:var(--radius-lg);font-size:13px;font-weight:500;box-shadow:0 10px 40px rgba(15,23,42,0.3);display:none;align-items:center;gap:10px;max-width:340px;border:1px solid rgba(255,255,255,0.08)}
@@ -235,6 +237,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 /* ── BOTTOM NAV (mobile only) */
 .bottom-nav{display:none}
+/* ── AGENDA MOBILE TABS */
+.agenda-mob-tabs{display:none;background:var(--surface);border-bottom:1px solid var(--border);padding:0 14px}
+.amt-btn{flex:1;padding:10px 4px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;transition:color .15s,border-color .15s;text-align:center}
+.amt-btn.active{color:var(--green);border-bottom-color:var(--green)}
 @media(max-width:768px){
   .sidebar{display:none !important}
   .main{margin-left:0}
@@ -258,6 +264,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   .toast{bottom:76px;right:12px;left:12px;max-width:none}
   .agenda-view-btn{display:none !important}
   .section-hdr .btn-primary{display:none !important}
+  .agenda-mob-tabs{display:flex}
+  .agenda-inner-pad{padding:10px 12px 0 12px !important}
+  #page-agenda .agenda-inner-pad > div:first-child{margin-bottom:10px !important}
+  #btn-agenda-hoje{font-size:11px;padding:4px 8px}
+  #agenda-periodo{font-size:13px !important}
   .fg2{grid-template-columns:1fr 1fr}
   .fg3{grid-template-columns:1fr 1fr}
   .fg3-datas{grid-template-columns:1fr 1fr !important}
@@ -523,9 +534,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
     <!-- ===== AGENDA ===== -->
     <div class="page" id="page-agenda" style="padding:0;overflow:hidden">
+      <!-- Mobile tab bar -->
+      <div class="agenda-mob-tabs">
+        <button class="amt-btn active" id="amt-semanal" onclick="setAgendaView('semanal')">Semana</button>
+        <button class="amt-btn" id="amt-mensal" onclick="setAgendaView('mensal')">Mês</button>
+        <button class="amt-btn" id="amt-diario" onclick="setAgendaView('diario')">Dia</button>
+      </div>
       <div style="display:flex;flex-direction:column;height:calc(100vh - 58px)"><div style="display:flex;flex:1;min-height:0">
         <!-- Main calendar -->
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;padding:18px 18px 0 22px">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;padding:18px 18px 0 22px" class="agenda-inner-pad">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
             <div style="display:flex;align-items:center;gap:6px">
               <button class="btn btn-outline btn-sm" onclick="agendaNavAnterior()"><i class="ti ti-chevron-left"></i></button>
@@ -748,10 +765,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <option value="">Sessão avulsa</option>
         </select>
       </div>
-      <div class="fg3 fg3-datas">
-        <div class="form-group"><label>Data do atendimento *</label><input type="date" id="atend-data"></div>
-        <div class="form-group"><label>Horário início</label><input type="time" id="atend-hora"></div>
-        <div class="form-group"><label>Horário fim</label><input type="time" id="atend-hora-fim"></div>
+      <div class="form-group"><label>Data do atendimento *</label><input type="date" id="atend-data"></div>
+      <div class="horario-row">
+        <div class="form-group" style="flex:1"><label>Horário início</label><input type="time" id="atend-hora"></div>
+        <div class="horario-sep">–</div>
+        <div class="form-group" style="flex:1"><label>Horário fim</label><input type="time" id="atend-hora-fim"></div>
       </div>
       <div class="fg2">
         <div class="form-group"><label>Valor da sessão (R$) *</label><input type="number" id="atend-valor" min="0" step="0.01" placeholder="0,00" oninput="calcSaldo()"></div>
@@ -2511,15 +2529,95 @@ function renderAgenda(){
   const rightPanel=document.getElementById('agenda-right-panel');
   if(rightPanel) rightPanel.style.display=mobile?'none':'';
   if(mobile){
-    // força visão semanal no mobile
-    if(agendaView==='diario') agendaView='semanal';
+    // sync mobile tabs
+    ['diario','semanal','mensal'].forEach(v=>{
+      const b=document.getElementById('amt-'+v);
+      if(b) b.classList.toggle('active',v===agendaView);
+    });
     atualizarBotoesView();
-    return renderAgendaSemanalMobile();
+    if(agendaView==='diario') return renderAgendaDiariaMobile();
+    if(agendaView==='semanal') return renderAgendaSemanalMobile();
+    return renderAgendaMensalMobile();
   }
   atualizarBotoesView();
   if(agendaView==='diario') return renderAgendaDiaria();
   if(agendaView==='semanal') return renderAgendaSemanal();
   return renderAgendaMensal();
+}
+
+function renderAgendaDiariaMobile(){
+  const hojeStr=dateStr(new Date());
+  const ds=dateStr(agendaBase);
+  const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const DOWS=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  document.getElementById('agenda-periodo').textContent=
+    `${DOWS[agendaBase.getDay()]}, ${agendaBase.getDate()} de ${MESES[agendaBase.getMonth()]}`;
+  const events=atendimentos.filter(a=>{
+    if(a.data!==ds) return false;
+    if(agendaFiltro) return nomePac(a.pacienteId).toLowerCase().includes(agendaFiltro);
+    return true;
+  }).sort((a,b)=>(a.hora||'99').localeCompare(b.hora||'99'));
+  const cal=document.getElementById('agenda-cal');
+  if(!events.length){
+    cal.innerHTML=`<div class="card" style="text-align:center;padding:40px 20px;color:var(--text3)">
+      <i class="ti ti-calendar-off" style="font-size:36px;opacity:.3;display:block;margin-bottom:10px"></i>
+      <p style="margin:0">Nenhum atendimento neste dia</p>
+    </div>`;
+    return;
+  }
+  cal.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
+    ${events.map(a=>{
+      const cor=corStatus(a);
+      return `<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer" onclick="editAtend('${a.id}')">
+        <div style="width:4px;align-self:stretch;border-radius:4px;background:${cor};flex-shrink:0"></div>
+        <div style="text-align:center;min-width:42px;flex-shrink:0">
+          <div style="font-size:14px;font-weight:700;color:var(--text)">${a.hora||'—'}</div>
+          ${a.horaFim?`<div style="font-size:10px;color:var(--text3)">${a.horaFim}</div>`:''}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(nomePac(a.pacienteId))}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${a.metodo||''}</div>
+        </div>
+        <div>${badgeHtml(statusComVencimento(a))}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderAgendaMensalMobile(){
+  if(!agendaBase){ agendaBase=new Date(); agendaBase.setDate(1); }
+  const ano=agendaBase.getFullYear(), mes=agendaBase.getMonth();
+  const hojeStr=dateStr(new Date());
+  const NOMES_MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('agenda-periodo').textContent=`${NOMES_MESES[mes]} ${ano}`;
+  const DOWS=['D','S','T','Q','Q','S','S'];
+  const primeiroDia=new Date(ano,mes,1).getDay();
+  const diasNoMes=new Date(ano,mes+1,0).getDate();
+  const byDate={};
+  atendimentos.forEach(a=>{
+    if(a.data&&a.data.startsWith(`${ano}-${String(mes+1).padStart(2,'0')}`)){
+      if(!byDate[a.data]) byDate[a.data]=[];
+      byDate[a.data].push(a);
+    }
+  });
+  let cells='';
+  for(let i=0;i<primeiroDia;i++) cells+=`<div></div>`;
+  for(let dia=1;dia<=diasNoMes;dia++){
+    const ds=`${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+    const isHoje=ds===hojeStr;
+    const evs=(byDate[ds]||[]);
+    const dots=evs.slice(0,3).map(a=>`<div style="width:5px;height:5px;border-radius:50%;background:${corStatus(a)}"></div>`).join('');
+    cells+=`<div style="display:flex;flex-direction:column;align-items:center;padding:4px 2px;cursor:pointer;border-radius:8px;background:${isHoje?'var(--green)':'transparent'}" onclick="agendaBase=new Date('${ds}');agendaView='diario';renderAgenda()">
+      <span style="font-size:13px;font-weight:${isHoje?'700':'500'};color:${isHoje?'#fff':'var(--text)'};">${dia}</span>
+      <div style="display:flex;gap:2px;min-height:6px;margin-top:2px">${dots}</div>
+    </div>`;
+  }
+  document.getElementById('agenda-cal').innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);overflow:hidden">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);background:var(--surface2)">
+      ${DOWS.map(d=>`<div style="text-align:center;padding:8px 2px;font-size:11px;font-weight:700;color:var(--text3)">${d}</div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:6px">${cells}</div>
+  </div>`;
 }
 
 function renderAgendaSemanalMobile(){
@@ -3048,10 +3146,10 @@ async function doRegister() {
 }
 
 function toggleUserPanel() {
+  if(window.innerWidth<=768){ return openMobileUserMenu(); }
   const panel = document.getElementById('user-panel');
   if (!panel) return;
   if (panel.classList.contains('user-panel-hidden')) {
-    // populate
     const nome = currentProfile?.nome || currentUser?.email || '';
     const email = currentUser?.email || '';
     const initials = nome.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
@@ -3063,6 +3161,60 @@ function toggleUserPanel() {
   } else {
     closeUserPanel();
   }
+}
+
+function openMobileUserMenu(){
+  const nome = currentProfile?.nome || currentUser?.email || '';
+  const email = currentUser?.email || '';
+  const initials = nome.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
+  const isAdmin = currentProfile?.role==='admin';
+
+  // remove se já existe
+  document.getElementById('mob-user-sheet')?.remove();
+  document.getElementById('mob-user-overlay')?.remove();
+
+  const overlay=document.createElement('div');
+  overlay.id='mob-user-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:8998;animation:fadeIn .15s';
+  overlay.onclick=closeMobileUserMenu;
+
+  const sheet=document.createElement('div');
+  sheet.id='mob-user-sheet';
+  sheet.style.cssText='position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-radius:20px 20px 0 0;z-index:8999;animation:slideSheet .25s cubic-bezier(0.34,1.1,0.64,1);padding-bottom:env(safe-area-inset-bottom,0)';
+  sheet.innerHTML=`
+    <div style="width:36px;height:4px;border-radius:2px;background:var(--border2);margin:12px auto 0"></div>
+    <div style="display:flex;align-items:center;gap:14px;padding:20px 20px 16px">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0">${initials}</div>
+      <div style="min-width:0">
+        <div style="font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(nome||email)}</div>
+        <div style="font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(email)}</div>
+        ${isAdmin?`<span style="background:var(--green);color:#fff;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;display:inline-block;margin-top:4px">Admin</span>`:''}
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border)">
+      ${menuItem('ti-user','Meu perfil',`closeMobileUserMenu();navTo('perfil',null)`)}
+      ${menuItem('ti-chart-bar','Relatório mensal',`closeMobileUserMenu();navTo('relatorio',null)`)}
+      ${menuItem('ti-users-group','Cadastros',`closeMobileUserMenu();navTo('cadastros',null)`)}
+      ${isAdmin?menuItem('ti-shield','Admin',`closeMobileUserMenu();navTo('admin',null)`):''}
+      <div style="height:1px;background:var(--border);margin:4px 0"></div>
+      ${menuItem('ti-lock','Alterar senha',`closeMobileUserMenu();openAlterarSenha()`)}
+      ${menuItem('ti-logout','Sair',`closeMobileUserMenu();doLogout()`,'color:var(--red)')}
+    </div>
+    <div style="height:16px"></div>
+  `;
+  function menuItem(icon,label,action,extra=''){
+    return `<button onclick="${action}" style="display:flex;align-items:center;gap:14px;padding:14px 20px;width:100%;border:none;background:transparent;cursor:pointer;font-family:inherit;text-align:left;${extra}">
+      <i class="ti ${icon}" style="font-size:20px;color:${extra?'var(--red)':'var(--text3)'}"></i>
+      <span style="font-size:15px;font-weight:500;color:${extra?'var(--red)':'var(--text)'}">${label}</span>
+    </button>`;
+  }
+  document.body.appendChild(overlay);
+  document.body.appendChild(sheet);
+}
+
+function closeMobileUserMenu(){
+  document.getElementById('mob-user-sheet')?.remove();
+  document.getElementById('mob-user-overlay')?.remove();
 }
 function closeUserPanel() {
   const panel = document.getElementById('user-panel');
