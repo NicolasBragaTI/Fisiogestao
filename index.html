@@ -90,6 +90,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 /* ── METRIC CARDS */
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.dash-main-grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-bottom:0}
 .metric-card{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:22px;box-shadow:var(--shadow);position:relative;transition:box-shadow 0.2s,transform 0.2s;display:flex;flex-direction:column}
 .metric-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
 .mc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -244,6 +245,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   .content{padding:16px 14px;padding-bottom:80px}
   .metrics{grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
   .metric-card{padding:16px}
+  .dash-main-grid{grid-template-columns:1fr;gap:14px}
+  .dash-chart-card{display:none}
   .mc-value{font-size:22px}
   .grid-2,.grid-3{grid-template-columns:1fr}
   .section-hdr{margin-bottom:14px}
@@ -392,8 +395,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="page active" id="page-visao-geral">
       <div class="metrics" id="dash-metrics"></div>
 
-      <div style="display:grid;grid-template-columns:1fr 360px;gap:18px;margin-bottom:0">
-        <div class="card">
+      <div class="dash-main-grid">
+        <div class="card dash-chart-card">
           <div class="card-header"><span class="card-title">Receita mensal (últimos 6 meses)</span></div>
           <div class="chart-wrap" style="height:230px"><canvas id="chart-receita"></canvas></div>
         </div>
@@ -2520,19 +2523,25 @@ function renderAgenda(){
 }
 
 function renderAgendaSemanalMobile(){
-  const hojeStr=dateStr(new Date());
+  const agora=new Date();
+  const hojeStr=dateStr(agora);
   const inicio=new Date(agendaBase);
   inicio.setDate(inicio.getDate()-inicio.getDay()); // domingo
   const dias=Array.from({length:7},(_,i)=>{const d=new Date(inicio);d.setDate(d.getDate()+i);return d;});
-  const DOWS=['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+  const DOWS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   const MESES=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const ini=dias[1],fim=dias[6];
   document.getElementById('agenda-periodo').textContent=
     `${ini.getDate()} ${MESES[ini.getMonth()]} – ${fim.getDate()} ${MESES[fim.getMonth()]}`;
 
-  const HOUR_H=52, START_H=7, END_H=21;
+  const HOUR_H=56, START_H=7, END_H=21;
   const totalH=END_H-START_H;
   const totalPx=totalH*HOUR_H;
+  const TIME_COL=32;
+
+  // linha horário atual
+  const nowTop=((agora.getHours()-START_H)*60+agora.getMinutes())/60*HOUR_H;
+  const showNow=agora.getHours()>=START_H&&agora.getHours()<END_H;
 
   const byDate={};
   dias.forEach(d=>{byDate[dateStr(d)]=[];});
@@ -2544,32 +2553,42 @@ function renderAgendaSemanalMobile(){
   });
 
   const cal=document.getElementById('agenda-cal');
-  cal.style.overflow='visible';
+  cal.style.cssText='overflow:visible;padding:0;';
 
-  let html=`<div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border)">
-    <div style="display:flex;border-bottom:2px solid var(--border);background:var(--surface2);position:sticky;top:52px;z-index:10">
-      <div style="width:28px;flex-shrink:0"></div>
-      ${dias.map(d=>{
-        const ds=dateStr(d);
-        const isHoje=ds===hojeStr;
-        const cnt=(byDate[ds]||[]).length;
-        return `<div style="flex:1;text-align:center;padding:6px 1px 4px;border-left:1px solid var(--border);background:${isHoje?'rgba(16,185,129,0.08)':'transparent'}">
-          <div style="font-size:8px;font-weight:700;color:${isHoje?'var(--green)':'var(--text3)'};letter-spacing:.04em;text-transform:uppercase">${DOWS[d.getDay()]}</div>
-          <div style="width:22px;height:22px;border-radius:50%;margin:2px auto 0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:${isHoje?'var(--green)':'transparent'};color:${isHoje?'#fff':'var(--text)'}">${d.getDate()}</div>
-          <div style="height:6px;display:flex;align-items:center;justify-content:center;margin-top:1px">${cnt?`<div style="width:${Math.min(cnt,4)*4}px;height:4px;border-radius:2px;background:var(--green)"></div>`:''}</div>
-        </div>`;
-      }).join('')}
+  // cabeçalho sticky
+  let hdr=`<div id="gcal-hdr" style="display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:20;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+    <div style="width:${TIME_COL}px;flex-shrink:0"></div>
+    ${dias.map(d=>{
+      const ds=dateStr(d);
+      const isHoje=ds===hojeStr;
+      const cnt=(byDate[ds]||[]).length;
+      return `<div style="flex:1;text-align:center;padding:5px 1px 6px;min-width:0">
+        <div style="font-size:9px;font-weight:600;color:${isHoje?'var(--green)':'var(--text3)'};letter-spacing:.03em;text-transform:uppercase;line-height:1">${DOWS[d.getDay()]}</div>
+        <div style="width:24px;height:24px;border-radius:50%;margin:3px auto 2px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:${isHoje?'var(--green)':'transparent'};color:${isHoje?'#fff':'var(--text)'}">${d.getDate()}</div>
+        <div style="display:flex;justify-content:center;gap:2px;min-height:4px">${Array.from({length:Math.min(cnt,3)},()=>`<div style="width:4px;height:4px;border-radius:50%;background:var(--green)"></div>`).join('')}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  // grid scrollável
+  let grid=`<div style="display:flex;overflow-y:auto;max-height:calc(100svh - 198px);-webkit-overflow-scrolling:touch" id="gcal-scroll">
+    <div style="width:${TIME_COL}px;flex-shrink:0;position:relative;height:${totalPx}px">
+      ${Array.from({length:totalH},(_,i)=>`
+        <div style="position:absolute;top:${i*HOUR_H-6}px;right:4px;font-size:9px;color:var(--text3);font-weight:500;text-align:right;line-height:1;white-space:nowrap">
+          ${i===0?'':`${String(START_H+i).padStart(2,'0')}h`}
+        </div>`).join('')}
     </div>
-    <div style="display:flex;overflow-y:auto;max-height:calc(100vh - 200px)">
-      <div style="width:28px;flex-shrink:0;position:relative;height:${totalPx}px;border-right:1px solid var(--border)">
-        ${Array.from({length:totalH},(_,i)=>`<div style="position:absolute;top:${i*HOUR_H+2}px;right:2px;font-size:8px;color:var(--text3);font-weight:600;text-align:right;line-height:1">${String(START_H+i).padStart(2,'0')}</div>`).join('')}
-      </div>
+    <div style="flex:1;min-width:0;display:flex;position:relative">
+      ${showNow?`
+        <div style="position:absolute;top:${nowTop}px;left:0;right:0;height:2px;background:#ea4335;z-index:5;pointer-events:none">
+          <div style="position:absolute;left:-4px;top:-4px;width:9px;height:9px;border-radius:50%;background:#ea4335"></div>
+        </div>`:''}
       ${dias.map(d=>{
         const ds=dateStr(d);const isHoje=ds===hojeStr;
-        return `<div style="flex:1;position:relative;height:${totalPx}px;border-left:1px solid var(--border);background:${isHoje?'rgba(16,185,129,0.015)':''}">
+        return `<div style="flex:1;position:relative;height:${totalPx}px;border-left:1px solid var(--border);min-width:0;background:${isHoje?'rgba(16,185,129,0.02)':''}">
           ${Array.from({length:totalH},(_,i)=>`
-            <div style="position:absolute;top:${i*HOUR_H}px;left:0;right:0;height:${HOUR_H}px;border-top:1px solid var(--border);cursor:pointer" onclick="openModalAtend()"></div>
-            <div style="position:absolute;top:${i*HOUR_H+HOUR_H/2}px;left:0;right:0;height:1px;border-top:1px dashed var(--border);opacity:.2;pointer-events:none"></div>
+            <div style="position:absolute;top:${i*HOUR_H}px;left:0;right:0;height:${HOUR_H}px;border-top:1px solid var(--border)" onclick="openModalAtend()"></div>
+            <div style="position:absolute;top:${i*HOUR_H+HOUR_H/2}px;left:0;right:0;border-top:1px dashed rgba(0,0,0,.07);pointer-events:none"></div>
           `).join('')}
           ${(byDate[ds]||[]).map(a=>{
             if(!a.hora) return '';
@@ -2577,19 +2596,30 @@ function renderAgendaSemanalMobile(){
             if(hh<START_H||hh>=END_H) return '';
             const top=((hh-START_H)*60+mm)/60*HOUR_H;
             let height=HOUR_H-2;
-            if(a.horaFim){const [fh,fm]=a.horaFim.split(':').map(Number);height=Math.max(18,((fh-hh)*60+(fm-mm))/60*HOUR_H-2);}
+            if(a.horaFim){const [fh,fm]=a.horaFim.split(':').map(Number);height=Math.max(16,((fh-hh)*60+(fm-mm))/60*HOUR_H-2);}
             const cor=corStatus(a);
             const nome=nomePac(a.pacienteId).split(' ')[0];
             return `<div onclick="event.stopPropagation();editAtend('${a.id}')"
-              style="position:absolute;top:${top+1}px;height:${height}px;left:1px;right:1px;background:${cor};color:#fff;border-radius:4px;padding:2px 3px;font-size:9px;font-weight:700;overflow:hidden;cursor:pointer;line-height:1.2;box-shadow:0 1px 4px rgba(0,0,0,0.2)">
-              ${nome}
+              style="position:absolute;top:${top+1}px;height:${height}px;left:1px;right:1px;background:${cor};color:#fff;border-radius:4px;padding:2px 3px;font-size:9px;font-weight:600;overflow:hidden;cursor:pointer;line-height:1.25;box-shadow:0 1px 3px rgba(0,0,0,.18)">
+              <div style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${nome}</div>
+              ${height>=30&&a.hora?`<div style="font-size:8px;opacity:.85">${a.hora}${a.horaFim?'–'+a.horaFim:''}</div>`:''}
             </div>`;
           }).join('')}
         </div>`;
       }).join('')}
     </div>
   </div>`;
-  cal.innerHTML=html;
+
+  cal.innerHTML=`<div style="background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border)">${hdr}${grid}</div>`;
+
+  // auto-scroll para horário atual ou início do expediente
+  requestAnimationFrame(()=>{
+    const sc=document.getElementById('gcal-scroll');
+    if(sc){
+      const scrollTo=showNow?Math.max(0,nowTop-80):(8-START_H)*HOUR_H;
+      sc.scrollTop=scrollTo;
+    }
+  });
 }
 
 // ── VISÃO DIÁRIA ──────────────────────────────────────────
