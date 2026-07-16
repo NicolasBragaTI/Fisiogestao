@@ -3366,44 +3366,56 @@ function closePanelOutside(e) {
   else if (wrap && wrap.contains(e.target)) setTimeout(() => document.addEventListener('click', closePanelOutside, {once:true}), 10);
 }
 
-async function handleAvatarUpload(file) {
+function handleAvatarUpload(file) {
   if (!file) return;
   if (!file.type.startsWith('image/')) { toast('Selecione uma imagem válida', 'error'); return; }
   const msg = document.getElementById('perfil-msg');
   if (msg) { msg.style.color = 'var(--text3)'; msg.textContent = 'Processando foto...'; }
   const reader = new FileReader();
-  reader.onload = async function(e) {
-    const img = new Image();
-    img.onload = async function() {
-      // Redimensiona para máx 200×200 e converte para JPEG comprimido
-      const MAX = 200;
-      const scale = Math.min(MAX / img.width, MAX / img.height, 1);
-      const w = Math.round(img.width * scale);
-      const h = Math.round(img.height * scale);
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
-      // Salva localmente primeiro (sempre funciona)
-      const lsKey = 'avatar_' + currentUser.id;
-      try { localStorage.setItem(lsKey, dataUrl); } catch(e) {}
-      if (currentProfile) currentProfile.avatar_url = dataUrl;
-      const nome = currentProfile?.nome || currentUser?.email || '';
-      const initials = nome.trim().split(/\s+/).map(n=>n[0]).join('').toUpperCase().slice(0,2) || '?';
-      updateAvatarDisplays(dataUrl, initials);
-      if (msg) { msg.style.color = 'var(--green)'; msg.textContent = 'Foto atualizada!'; }
-      toast('Foto de perfil atualizada!', 'success');
-      // Tenta também salvar no banco (em segundo plano)
-      try {
-        await _sb.from('profiles').update({ avatar_url: dataUrl }).eq('id', currentUser.id);
-      } catch(e) {}
-    };
-    img.onerror = function() {
-      if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Erro ao processar imagem.'; }
-    };
-    img.src = e.target.result;
+  reader.onload = function(e) {
+    const rawUrl = e.target.result;
+    if (!rawUrl) {
+      if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Erro ao ler arquivo.'; }
+      return;
+    }
+    // Tenta redimensionar via canvas; se falhar, usa o URL original
+    try {
+      const img = new Image();
+      img.onload = function() {
+        try {
+          const MAX = 300;
+          const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          _aplicarAvatar(canvas.toDataURL('image/jpeg', 0.85), msg);
+        } catch(err) {
+          _aplicarAvatar(rawUrl, msg);
+        }
+      };
+      img.onerror = function() { _aplicarAvatar(rawUrl, msg); };
+      img.src = rawUrl;
+    } catch(err) {
+      _aplicarAvatar(rawUrl, msg);
+    }
+  };
+  reader.onerror = function() {
+    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = 'Erro ao ler o arquivo.'; }
   };
   reader.readAsDataURL(file);
+}
+
+function _aplicarAvatar(dataUrl, msg) {
+  try { localStorage.setItem('avatar_' + currentUser.id, dataUrl); } catch(e) {}
+  if (currentProfile) currentProfile.avatar_url = dataUrl;
+  const nome = currentProfile?.nome || currentUser?.email || '';
+  const initials = nome.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2) || '?';
+  updateAvatarDisplays(dataUrl, initials);
+  if (msg) { msg.style.color = 'var(--green)'; msg.textContent = 'Foto atualizada!'; }
+  toast('Foto de perfil atualizada!', 'success');
+  // Tenta salvar no banco em segundo plano (não bloqueia)
+  try { _sb.from('profiles').update({ avatar_url: dataUrl }).eq('id', currentUser.id).then(()=>{}); } catch(e) {}
 }
 
 function loadAvatarFromStorage() {
