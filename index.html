@@ -1221,8 +1221,9 @@ function renderDashboard(){
       return s+hist.filter(p=>p.data&&p.data.startsWith(thisMonth))
                    .reduce((ss,p)=>ss+parseFloat(p.valor||0),0);
     }
-    if(a.status==='pago'&&a.data&&a.data.startsWith(thisMonth)) return s+parseFloat(a.valor||0);
-    if(a.status==='parcial'&&a.data&&a.data.startsWith(thisMonth)) return s+parseFloat(a.valorRecebido||0);
+    const pagDate = a.dataPagamento || a.data;
+    if(a.status==='pago'&&pagDate&&pagDate.startsWith(thisMonth)) return s+parseFloat(a.valor||0);
+    if(a.status==='parcial'&&pagDate&&pagDate.startsWith(thisMonth)) return s+parseFloat(a.valorRecebido||0);
     return s;
   },0) + pacotes.reduce((s,p)=>{
     return s+(p.historicoPagamentos||[]).filter(x=>x.data&&x.data.startsWith(thisMonth))
