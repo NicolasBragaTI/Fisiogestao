@@ -1723,11 +1723,17 @@ function populateRelMes(){
 function renderRelatorio(){
   const mes=document.getElementById('rel-mes').value;
   const list=atendimentos.filter(a=>!mes||a.data.startsWith(mes));
-  const pagos=list.filter(a=>a.status==='pago');
+  // Recebido: usa dataPagamento (quando o dinheiro entrou) em vez da data do atendimento
+  const pagos=atendimentos.filter(a=>{
+    if(a.status!=='pago'&&a.status!=='parcial') return false;
+    const pagDate=a.dataPagamento||a.data;
+    return !mes||pagDate.startsWith(mes);
+  });
+  const recebidoTotal=pagos.reduce((s,a)=>s+(a.status==='pago'?parseFloat(a.valor||0):parseFloat(a.valorRecebido||0)),0);
   const pend=list.filter(a=>statusComVencimento(a)==='pendente');
   const atras=list.filter(a=>statusComVencimento(a)==='atrasado');
   document.getElementById('rel-metrics').innerHTML=`
-    <div class="metric-card green"><div class="mc-label">Recebido</div><div class="mc-value" style="font-size:18px">${brl(pagos.reduce((s,a)=>s+parseFloat(a.valor||0),0))}</div><div class="mc-sub">${pagos.length} atendimento${pagos.length!==1?'s':''}</div></div>
+    <div class="metric-card green"><div class="mc-label">Recebido</div><div class="mc-value" style="font-size:18px">${brl(recebidoTotal)}</div><div class="mc-sub">${pagos.length} atendimento${pagos.length!==1?'s':''}</div></div>
     <div class="metric-card amber"><div class="mc-label">Pendente</div><div class="mc-value" style="font-size:18px;color:var(--amber)">${brl(pend.reduce((s,a)=>s+parseFloat(a.valor||0),0))}</div><div class="mc-sub">${pend.length} em aberto</div></div>
     <div class="metric-card red"><div class="mc-label">Atrasado</div><div class="mc-value" style="font-size:18px;color:var(--red)">${brl(atras.reduce((s,a)=>s+parseFloat(a.valor||0),0))}</div><div class="mc-sub">${atras.length} vencido${atras.length!==1?'s':''}</div></div>`;
   const sorted=[...list].sort((a,b)=>a.data.localeCompare(b.data));
