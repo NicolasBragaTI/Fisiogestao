@@ -1,0 +1,13 @@
+# Local AI assistant settings may contain machine-specific permissions or secrets.
+.claude/
+
+# Environment files and local overrides.
+.env
+.env.*
+!.env.example
+
+# Dependencies, build output and local tooling.
+node_modules/
+dist/
+.DS_Store
+*.log
