@@ -1,5 +1,5 @@
 // Cole aqui o link do checkout liberado pela Perfect Pay.
-const PERFECTPAY_CHECKOUT_URL = '';
+const PERFECTPAY_CHECKOUT_URL = 'https://go.perfectpay.com.br/PPU38CQECIM';
 
 if (PERFECTPAY_CHECKOUT_URL) {
   document.querySelectorAll('.checkout-link').forEach((link) => {
