@@ -49,6 +49,7 @@ test('frontend usa somente chave pública moderna do Supabase', () => {
 });
 
 test('migrações críticas de segurança e desempenho estão versionadas', () => {
+  assert.ok(existsSync(join(root, 'supabase/migrations/20260717180000_create_initial_schema.sql')));
   assert.ok(existsSync(join(root, 'supabase/migrations/20260717191543_harden_rls_and_function_privileges.sql')));
   assert.ok(existsSync(join(root, 'supabase/migrations/20260718125341_add_fk_covering_indexes.sql')));
 });
