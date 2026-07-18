@@ -33,6 +33,21 @@ function limparFiltrosPag(){
   renderPagamentos();
 }
 
+function pagamentosDePacotes(){
+  return pacotes.flatMap(p=>(p.historicoPagamentos||[]).map(pg=>({
+    ...pg,
+    id:`pacote-${p.id}-${pg.id}`,
+    pacienteId:p.pacienteId,
+    pacoteId:p.id,
+    pacoteNome:p.nome,
+    data:pg.data,
+    valor:parseFloat(pg.valor||0),
+    metodo:pg.metodo||p.metodo||'—',
+    status:'pago',
+    _tipo:'pagamento-pacote'
+  })));
+}
+
 // ── HISTÓRICO DE PAGAMENTOS ──────────────────────────────
 let _hpagAtendId = null;
 
@@ -100,7 +115,9 @@ function renderPagamentos(){
   const sta=document.getElementById('pay-status').value;
   const btnLimpar=document.getElementById('pay-btn-limpar');
   if(btnLimpar) btnLimpar.style.display=(mes||pid||sta)?'inline-flex':'none';
-  let list=[...atendimentos];
+  // Sessões vinculadas representam consumo do pacote, não um novo pagamento.
+  // No lugar delas, exibe cada entrada efetivamente registrada no pacote.
+  let list=[...atendimentos.filter(a=>!a.pacoteId),...pagamentosDePacotes()];
   // filtro de mês: pago → data efetiva (pagamento); pendente/parcial → data do atendimento
   if(mes) list=list.filter(a=>dataEfetiva(a)?.startsWith(mes));
   if(pid) list=list.filter(a=>a.pacienteId===pid);
@@ -108,9 +125,13 @@ function renderPagamentos(){
 
   // métricas (calculadas antes dos filtros de status, mas com filtros de mês/paciente)
   const base=atendimentos.filter(a=>!a.pacoteId&&(!mes||dataEfetiva(a)?.startsWith(mes))&&(!pid||a.pacienteId===pid));
-  const pendente=base.filter(a=>['pendente','parcial','atrasado'].includes(statusComVencimento(a)))
+  const pacotesFiltrados=pacotes.filter(p=>(!pid||p.pacienteId===pid));
+  const pendenteAvulso=base.filter(a=>['pendente','parcial','atrasado'].includes(statusComVencimento(a)))
     .reduce((s,a)=>s+parseFloat(a.valor||0)-parseFloat(a.valorRecebido||0),0);
-  const recebido=base.reduce((s,a)=>{
+  const pendentePacotes=mes?0:pacotesFiltrados.filter(p=>p.status==='ativo')
+    .reduce((s,p)=>s+Math.max(0,parseFloat(p.valorTotal||0)-parseFloat(p.valorRecebido||0)),0);
+  const pendente=pendenteAvulso+pendentePacotes;
+  const recebidoAvulso=base.reduce((s,a)=>{
     const hist=a.historicoPagamentos||[];
     if(hist.length){
       // soma só entradas cujo mês bate com o filtro
@@ -121,6 +142,10 @@ function renderPagamentos(){
     if(a.status==='parcial') return s+parseFloat(a.valorRecebido||0);
     return s;
   },0);
+  const recebidoPacotes=pacotesFiltrados.reduce((s,p)=>s+(p.historicoPagamentos||[])
+    .filter(pg=>!mes||pg.data?.startsWith(mes))
+    .reduce((ss,pg)=>ss+parseFloat(pg.valor||0),0),0);
+  const recebido=recebidoAvulso+recebidoPacotes;
   const atrasado=base.filter(a=>statusComVencimento(a)==='atrasado')
     .reduce((s,a)=>s+parseFloat(a.valor||0)-parseFloat(a.valorRecebido||0),0);
   document.getElementById('pay-metrics-bar').innerHTML=`
@@ -166,15 +191,16 @@ function renderPagamentos(){
         <div class="pav" style="width:36px;height:36px;font-size:11px;flex-shrink:0">${iniciais(nomePac(a.pacienteId))}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:13px">${esc(nomePac(a.pacienteId))}</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px">${fmtData(a.data)}${a.hora?' · '+a.hora:''} · ${a.metodo||'—'}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">${fmtData(a.data)}${a.hora?' · '+a.hora:''} · ${a.metodo||'—'}${a._tipo==='pagamento-pacote'?' · '+esc(a.pacoteNome):''}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-weight:700;font-size:14px">${brl(a.valor)}</div>
           <div style="margin-top:4px">${badgeHtml(statusComVencimento(a))}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
-          <button class="btn btn-ghost btn-sm" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
-          <button class="btn btn-ghost btn-sm" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+          ${a._tipo==='pagamento-pacote'
+            ? `<button class="btn btn-ghost btn-sm" title="Ver pacote" onclick="navTo('pacotes',null)" style="color:var(--green)"><i class="ti ti-package"></i></button>`
+            : `<button class="btn btn-ghost btn-sm" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button><button class="btn btn-ghost btn-sm" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>`}
         </div>
       </div>`).join('');
   } else {
@@ -187,7 +213,7 @@ function renderPagamentos(){
             <div class="pav" style="width:30px;height:30px;font-size:10px">${iniciais(nomePac(a.pacienteId))}</div>
             <div>
               <span style="font-weight:500">${esc(nomePac(a.pacienteId))}</span>
-              ${a.pacoteId?`<div style="font-size:11px;color:var(--green);display:flex;align-items:center;gap:3px"><i class="ti ti-package"></i>${esc(pacotes.find(x=>x.id===a.pacoteId)?.nome||'Pacote')}</div>`:''}
+              ${a._tipo==='pagamento-pacote'?`<div style="font-size:11px;color:var(--green);display:flex;align-items:center;gap:3px"><i class="ti ti-package"></i>${esc(a.pacoteNome||'Pacote')}</div>`:''}
             </div>
           </div>
         </td>
@@ -199,7 +225,7 @@ function renderPagamentos(){
         <td><span style="color:var(--text2)">${a.metodo||'—'}</span></td>
         <td>${badgeHtml(statusComVencimento(a))}</td>
         <td style="text-align:right">
-          ${a.pacoteId
+          ${a._tipo==='pagamento-pacote'
             ? `<button class="btn btn-ghost btn-sm" title="Ver pacote" onclick="navTo('pacotes',null)" style="color:var(--green)"><i class="ti ti-package"></i></button>`
             : `<button class="btn btn-ghost btn-sm" title="Histórico de pagamentos" onclick="abrirHistoricoPag('${a.id}')" style="color:var(--green)"><i class="ti ti-history"></i></button>`}
           <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>

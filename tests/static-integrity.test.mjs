@@ -64,3 +64,10 @@ test('login direciona o usuário para a visão geral', () => {
   assert.match(loginFunction, /page-title/);
   assert.match(loginFunction, /Visão geral/);
 });
+
+test('pagamentos de pacotes são consolidados sem contar sessões como novas cobranças', () => {
+  const payments = readFileSync(join(root, 'js/payments.js'), 'utf8');
+  assert.match(payments, /function pagamentosDePacotes\(\)/);
+  assert.match(payments, /atendimentos\.filter\(a=>!a\.pacoteId\)/);
+  assert.match(payments, /\.\.\.pagamentosDePacotes\(\)/);
+});
