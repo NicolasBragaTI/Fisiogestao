@@ -40,12 +40,19 @@ test('módulos carregam na ordem necessária', () => {
 
 test('frontend usa somente chave pública moderna do Supabase', () => {
   const client = readFileSync(join(root, 'js/supabase-client.js'), 'utf8');
-  assert.match(client, /sb_publishable_[A-Za-z0-9_-]+/);
+  assert.equal((client.match(/sb_publishable_[A-Za-z0-9_-]+/g) ?? []).length, 2);
   assert.match(client, /storage:\s*window\.localStorage/);
   assert.match(client, /persistSession:\s*true/);
   assert.doesNotMatch(client, /sb_secret_/);
   assert.doesNotMatch(client, /service_role/);
   assert.doesNotMatch(client, /eyJhbGciOi/);
+});
+
+test('previews usam QAS e o domínio oficial permanece em produção', () => {
+  const client = readFileSync(join(root, 'js/supabase-client.js'), 'utf8');
+  assert.match(client, /rcnuymnazjyhckoojpvf\.supabase\.co/);
+  assert.match(client, /fisiogestao-jhmd\.vercel\.app/);
+  assert.match(client, /qas-environment-badge/);
 });
 
 test('migrações críticas de segurança e desempenho estão versionadas', () => {
