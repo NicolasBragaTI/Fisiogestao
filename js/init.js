@@ -8,8 +8,11 @@
   });
   const authed = await checkAuth();
   if (!authed) return;
+  // A sessão local já foi validada: devolve a interface imediatamente e
+  // atualiza perfil e dados em paralelo, reduzindo a espera após um reload.
   hideAuthScreen();
-  await loadData();
+  document.getElementById('page-title').textContent = 'Atualizando dados...';
+  await Promise.all([loadProfile(), loadData()]);
   renderDashboard();
   document.getElementById('page-title').textContent = 'Visão geral';
 })();

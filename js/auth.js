@@ -6,7 +6,6 @@ async function checkAuth() {
   const { data: { session } } = await _sb.auth.getSession();
   if (!session) { showAuthScreen(); return false; }
   currentUser = session.user;
-  await loadProfile();
   return true;
 }
 

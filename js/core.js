@@ -22,7 +22,8 @@ let charts = {};
 async function loadData(){
   const [{ data: pacs, error: e1 }, { data: atends, error: e2 }] = await Promise.all([
     _sb.from('pacientes').select('*').order('nome'),
-    _sb.from('atendimentos').select('*').order('data', { ascending: false })
+    _sb.from('atendimentos').select('*').order('data', { ascending: false }),
+    dbLoadPacotes()
   ]);
   if(e1||e2){ console.error(e1||e2); return; }
   pacientes = (pacs||[]).map(p => ({
@@ -36,7 +37,6 @@ async function loadData(){
     historicoPagamentos: Array.isArray(a.historico_pagamentos) ? a.historico_pagamentos : [],
     pacoteId: a.pacote_id||''
   }));
-  await dbLoadPacotes();
 }
 
 async function dbSavePaciente(p, isNew){

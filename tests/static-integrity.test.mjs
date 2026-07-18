@@ -71,3 +71,10 @@ test('pagamentos de pacotes são consolidados sem contar sessões como novas cob
   assert.match(payments, /atendimentos\.filter\(a=>!a\.pacoteId\)/);
   assert.match(payments, /\.\.\.pagamentosDePacotes\(\)/);
 });
+
+test('recarregamento restaura a interface antes de buscar os dados em paralelo', () => {
+  const init = readFileSync(join(root, 'js/init.js'), 'utf8');
+  const core = readFileSync(join(root, 'js/core.js'), 'utf8');
+  assert.ok(init.indexOf('hideAuthScreen()') < init.indexOf('await Promise.all([loadProfile(), loadData()])'));
+  assert.match(core, /Promise\.all\(\[[\s\S]*dbLoadPacotes\(\)/);
+});
