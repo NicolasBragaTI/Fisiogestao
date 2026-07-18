@@ -1,0 +1,57 @@
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import test from 'node:test';
+
+const root = new URL('../', import.meta.url).pathname;
+const indexPath = join(root, 'index.html');
+const indexHtml = readFileSync(indexPath, 'utf8');
+
+const localScripts = [...indexHtml.matchAll(/<script\s+src="([^"]+)"/g)]
+  .map((match) => match[1])
+  .filter((src) => !/^https?:\/\//.test(src));
+
+test('todos os módulos locais referenciados existem e têm sintaxe válida', () => {
+  assert.ok(localScripts.length > 0, 'nenhum módulo local encontrado');
+
+  for (const script of localScripts) {
+    const file = join(root, script);
+    assert.ok(existsSync(file), `arquivo ausente: ${script}`);
+    execFileSync(process.execPath, ['--check', file], { stdio: 'pipe' });
+  }
+});
+
+test('módulos carregam na ordem necessária', () => {
+  assert.deepEqual(localScripts, [
+    'js/supabase-client.js',
+    'js/core.js',
+    'js/dashboard.js',
+    'js/payments.js',
+    'js/patients.js',
+    'js/reports.js',
+    'js/appointments.js',
+    'js/packages.js',
+    'js/agenda.js',
+    'js/auth.js',
+    'js/init.js'
+  ]);
+});
+
+test('frontend usa somente chave pública moderna do Supabase', () => {
+  const client = readFileSync(join(root, 'js/supabase-client.js'), 'utf8');
+  assert.match(client, /sb_publishable_[A-Za-z0-9_-]+/);
+  assert.doesNotMatch(client, /sb_secret_/);
+  assert.doesNotMatch(client, /service_role/);
+  assert.doesNotMatch(client, /eyJhbGciOi/);
+});
+
+test('migrações críticas de segurança e desempenho estão versionadas', () => {
+  assert.ok(existsSync(join(root, 'supabase/migrations/20260717191543_harden_rls_and_function_privileges.sql')));
+  assert.ok(existsSync(join(root, 'supabase/migrations/20260718125341_add_fk_covering_indexes.sql')));
+});
+
+test('página de vendas aponta para o checkout oficial', () => {
+  const sales = readFileSync(join(root, 'js/sales.js'), 'utf8');
+  assert.match(sales, /https:\/\/go\.perfectpay\.com\.br\/PPU38CQECIM/);
+});
