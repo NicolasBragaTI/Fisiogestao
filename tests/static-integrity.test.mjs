@@ -55,3 +55,10 @@ test('página de vendas aponta para o checkout oficial', () => {
   const sales = readFileSync(join(root, 'js/sales.js'), 'utf8');
   assert.match(sales, /https:\/\/go\.perfectpay\.com\.br\/PPU38CQECIM/);
 });
+
+test('login direciona o usuário para a visão geral', () => {
+  const auth = readFileSync(join(root, 'js/auth.js'), 'utf8');
+  const loginFunction = auth.match(/async function doLogin\(\) \{[\s\S]*?\n\}/)?.[0] ?? '';
+  assert.match(loginFunction, /page-title/);
+  assert.match(loginFunction, /Visão geral/);
+});

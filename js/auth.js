@@ -119,6 +119,7 @@ async function doLogin() {
   hideAuthScreen();
   await loadData();
   renderDashboard();
+  document.getElementById('page-title').textContent = 'Visão geral';
 }
 
 async function doRegister() {
