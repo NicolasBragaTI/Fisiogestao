@@ -41,6 +41,8 @@ test('módulos carregam na ordem necessária', () => {
 test('frontend usa somente chave pública moderna do Supabase', () => {
   const client = readFileSync(join(root, 'js/supabase-client.js'), 'utf8');
   assert.match(client, /sb_publishable_[A-Za-z0-9_-]+/);
+  assert.match(client, /storage:\s*window\.localStorage/);
+  assert.match(client, /persistSession:\s*true/);
   assert.doesNotMatch(client, /sb_secret_/);
   assert.doesNotMatch(client, /service_role/);
   assert.doesNotMatch(client, /eyJhbGciOi/);

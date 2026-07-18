@@ -4,7 +4,8 @@ const _sb = supabase.createClient(
   'sb_publishable_lzLWVm3zOcnqVS3nTEpabw_7QE3OEAi',
   {
     auth: {
-      storage: window.sessionStorage,
+      // Mantém a sessão entre recarregamentos e novas abas do mesmo navegador.
+      storage: window.localStorage,
       persistSession: true,
       autoRefreshToken: true,
     },
