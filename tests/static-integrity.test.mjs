@@ -78,3 +78,8 @@ test('recarregamento restaura a interface antes de buscar os dados em paralelo',
   assert.ok(init.indexOf('hideAuthScreen()') < init.indexOf('await Promise.all([loadProfile(), loadData()])'));
   assert.match(core, /Promise\.all\(\[[\s\S]*dbLoadPacotes\(\)/);
 });
+
+test('tela de login não aparece antes da verificação da sessão', () => {
+  assert.match(indexHtml, /id="boot-screen"[^>]*display:flex/);
+  assert.match(indexHtml, /id="auth-screen"[^>]*display:none/);
+});

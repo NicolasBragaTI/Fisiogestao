@@ -54,6 +54,8 @@ function updateAvatarDisplays(url, initials) {
 }
 
 function showAuthScreen() {
+  const boot = document.getElementById('boot-screen');
+  if (boot) boot.style.display = 'none';
   document.getElementById('auth-screen').style.display = 'flex';
   document.querySelector('aside.sidebar').style.display = 'none';
   document.querySelector('.main').style.display = 'none';
@@ -62,6 +64,8 @@ function showAuthScreen() {
 }
 
 function hideAuthScreen() {
+  const boot = document.getElementById('boot-screen');
+  if (boot) boot.style.display = 'none';
   document.getElementById('auth-screen').style.display = 'none';
   document.querySelector('aside.sidebar').style.display = '';
   document.querySelector('.main').style.display = '';
