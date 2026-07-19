@@ -77,6 +77,13 @@ test('lembretes de WhatsApp exigem consentimento e não incluem dados clínicos'
   assert.match(migration, /pending.*confirmed.*cancelled/s);
 });
 
+test('botão móvel adiciona paciente quando a página de pacientes está ativa', () => {
+  const core = readFileSync(join(root, 'js/core.js'), 'utf8');
+  assert.match(indexHtml, /onclick="openMobileCreate\(\)"/);
+  assert.match(core, /activePage==='page-pacientes'/);
+  assert.match(core, /return openModalPaciente\(\)/);
+});
+
 test('página de vendas aponta para o checkout oficial', () => {
   const sales = readFileSync(join(root, 'js/sales.js'), 'utf8');
   assert.match(sales, /https:\/\/go\.perfectpay\.com\.br\/PPU38CQECIM/);
