@@ -91,6 +91,8 @@ test('aba de atendimentos lembra e permite preparar confirmações pelo WhatsApp
   assert.match(indexHtml, /id="bn-atendimentos"/);
   assert.match(payments, /confirmationStatus==='pending'&&!a\.reminderSentAt/);
   assert.match(payments, /enviarLembreteWhatsApp\('\$\{a\.id\}'\)/);
+  assert.match(payments, /Reenviar lembrete/);
+  assert.match(payments, /at-whatsapp-action/);
   assert.match(appointments, /const id=atendimentoId\|\|editAtendId/);
 });
 

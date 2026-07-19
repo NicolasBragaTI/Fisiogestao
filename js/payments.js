@@ -267,22 +267,24 @@ function renderAtendimentos(){
   if(mobile){
     tableWrap.style.display='none';
     cardList.innerHTML=list.map(a=>`
-      <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border)">
-        <div class="pav" style="width:36px;height:36px;font-size:11px;flex-shrink:0">${iniciais(nomePac(a.pacienteId))}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:13px">${esc(nomePac(a.pacienteId))}</div>
-          <div style="font-size:12px;color:var(--text3);margin-top:2px">${fmtData(a.data)}${a.hora?' · '+a.hora:''}</div>
-          <div style="margin-top:5px">${confirmationBadgeHtml(a)}</div>
-          ${a.obs?`<div style="font-size:12px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">${esc(a.obs)}</div>`:''}
+      <div class="at-mobile-card">
+        <div style="display:flex;align-items:flex-start;gap:11px">
+          <div class="pav" style="width:38px;height:38px;font-size:11px;flex-shrink:0">${iniciais(nomePac(a.pacienteId))}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:14px">${esc(nomePac(a.pacienteId))}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:3px"><i class="ti ti-calendar-event" style="margin-right:3px"></i>${fmtData(a.data)}${a.hora?' às '+a.hora:''}</div>
+            ${a.obs?`<div style="font-size:12px;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px">${esc(a.obs)}</div>`:''}
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-weight:800;font-size:15px">${brl(a.valor)}</div>
+            <div style="margin-top:5px">${badgeHtml(statusComVencimento(a))}</div>
+          </div>
         </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-weight:700;font-size:14px">${brl(a.valor)}</div>
-          <div style="margin-top:4px">${badgeHtml(statusComVencimento(a))}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
-          ${a.confirmationStatus==='pending'?`<button class="btn btn-ghost btn-sm" title="${a.reminderSentAt?'Preparar novo lembrete':'Enviar lembrete pelo WhatsApp'}" onclick="enviarLembreteWhatsApp('${a.id}')" style="color:var(--green)"><i class="ti ti-brand-whatsapp"></i></button>`:''}
-          <button class="btn btn-ghost btn-sm" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
-          <button class="btn btn-ghost btn-sm" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
+        <div style="margin-top:10px">${confirmationBadgeHtml(a)}</div>
+        <div class="at-mobile-actions">
+          ${a.confirmationStatus==='pending'?`<button class="btn btn-outline at-whatsapp-action" title="${a.reminderSentAt?'Preparar novo lembrete':'Enviar lembrete pelo WhatsApp'}" onclick="enviarLembreteWhatsApp('${a.id}')"><i class="ti ti-brand-whatsapp"></i><span>${a.reminderSentAt?'Reenviar lembrete':'Enviar lembrete'}</span></button>`:'<div style="flex:1"></div>'}
+          <button class="btn btn-ghost btn-sm" title="Editar atendimento" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i><span>Editar</span></button>
+          <button class="btn btn-ghost btn-sm" title="Remover atendimento" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
         </div>
       </div>`).join('');
   } else {
