@@ -59,6 +59,20 @@ test('migrações críticas de segurança e desempenho estão versionadas', () =
   assert.ok(existsSync(join(root, 'supabase/migrations/20260717180000_create_initial_schema.sql')));
   assert.ok(existsSync(join(root, 'supabase/migrations/20260717191543_harden_rls_and_function_privileges.sql')));
   assert.ok(existsSync(join(root, 'supabase/migrations/20260718125341_add_fk_covering_indexes.sql')));
+  const hardening = readFileSync(join(root, 'supabase/migrations/20260719143000_harden_profile_and_disable_public_admin_rpcs.sql'), 'utf8');
+  assert.match(hardening, /security invoker/i);
+  assert.match(hardening, /profiles_update_own/);
+  assert.match(hardening, /revoke execute on function public\.admin_get_users\(\) from public, anon, authenticated/i);
+});
+
+test('cadastro e troca de senha exigem senha forte', () => {
+  const auth = readFileSync(join(root, 'js/auth.js'), 'utf8');
+  assert.match(auth, /password\.length < 12/);
+  assert.match(auth, /\[A-Z\]/);
+  assert.match(auth, /\[a-z\]/);
+  assert.match(auth, /\[0-9\]/);
+  assert.match(auth, /\[\^A-Za-z0-9\]/);
+  assert.doesNotMatch(auth, /senha deve ter ao menos (6|8) caracteres/i);
 });
 
 test('lembretes de WhatsApp exigem consentimento e não incluem dados clínicos', () => {

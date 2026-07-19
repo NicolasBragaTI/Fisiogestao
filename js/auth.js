@@ -12,10 +12,12 @@ async function checkAuth() {
 async function loadProfile() {
   const { data } = await _sb.from('profiles').select('*').eq('id', currentUser.id).single();
   currentProfile = data;
+  // A gestão de contas fica temporariamente restrita ao painel do Supabase.
+  // Não exponha RPCs SECURITY DEFINER no cliente apenas para montar esse menu.
   const navAdmin = document.getElementById('nav-admin');
-  if (navAdmin) navAdmin.style.display = currentProfile?.role === 'admin' ? 'block' : 'none';
+  if (navAdmin) navAdmin.style.display = 'none';
   const navCadastros = document.getElementById('nav-cadastros');
-  if (navCadastros) navCadastros.style.display = currentProfile?.role === 'admin' ? 'flex' : 'none';
+  if (navCadastros) navCadastros.style.display = 'none';
   const footerEl = document.getElementById('sidebar-user');
   if (footerEl) footerEl.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${currentProfile?.nome || currentUser.email}</div><div style="font-size:11px;color:var(--text3)">${currentUser.email}</div>`;
   const nome = currentProfile?.nome || currentUser.email || '';
@@ -85,6 +87,15 @@ function switchAuthTab(tab) {
 }
 
 let _lastRegEmail = '';
+function passwordPolicyError(password) {
+  if (password.length < 12) return 'A senha deve ter ao menos 12 caracteres.';
+  if (!/[a-z]/.test(password)) return 'Inclua ao menos uma letra minúscula.';
+  if (!/[A-Z]/.test(password)) return 'Inclua ao menos uma letra maiúscula.';
+  if (!/[0-9]/.test(password)) return 'Inclua ao menos um número.';
+  if (!/[^A-Za-z0-9]/.test(password)) return 'Inclua ao menos um símbolo.';
+  return '';
+}
+
 function showEmailSent(email) {
   _lastRegEmail = email;
   document.getElementById('reg-email-sent-addr').textContent = email;
@@ -134,7 +145,8 @@ async function doRegister() {
   err.style.color = 'var(--red)'; err.textContent = '';
   if (!nome || !email || !password) { err.textContent = 'Preencha todos os campos.'; return; }
   if (password !== confirm) { err.textContent = 'As senhas não coincidem.'; return; }
-  if (password.length < 8) { err.textContent = 'A senha deve ter ao menos 8 caracteres.'; return; }
+  const passwordError = passwordPolicyError(password);
+  if (passwordError) { err.textContent = passwordError; return; }
   let data, error;
   try {
     const res = await _sb.auth.signUp({ email, password, options: { data: { nome } } });
@@ -154,7 +166,7 @@ async function doRegister() {
     else if (msg.toLowerCase().includes('invalid email'))
       err.textContent = 'E-mail inválido. Verifique e tente novamente.';
     else if (msg.toLowerCase().includes('password') || msg.toLowerCase().includes('senha'))
-      err.textContent = 'Senha fraca: use ao menos 8 caracteres com letras e números.';
+      err.textContent = 'Senha fraca: use 12 caracteres com maiúscula, minúscula, número e símbolo.';
     else if (!isBadMsg)
       err.textContent = msg;
     else
@@ -242,8 +254,6 @@ function openMobileUserMenu(){
     <div style="border-top:1px solid var(--border)">
       ${menuItem('ti-user','Meu perfil',`closeMobileUserMenu();navTo('perfil',null)`)}
       ${menuItem('ti-chart-bar','Relatório mensal',`closeMobileUserMenu();navTo('relatorio',null)`)}
-      ${menuItem('ti-users-group','Cadastros',`closeMobileUserMenu();navTo('cadastros',null)`)}
-      ${isAdmin?menuItem('ti-shield','Admin',`closeMobileUserMenu();navTo('admin',null)`):''}
       <div style="height:1px;background:var(--border);margin:4px 0"></div>
       ${menuItem('ti-lock','Alterar senha',`closeMobileUserMenu();openAlterarSenha()`)}
       ${menuItem('ti-logout','Sair',`closeMobileUserMenu();doLogout()`,'color:var(--red)')}
@@ -414,7 +424,8 @@ async function salvarNovaSenha() {
   const nova = document.getElementById('senha-nova').value;
   const conf = document.getElementById('senha-conf').value;
   const msg = document.getElementById('senha-msg');
-  if (nova.length < 6) { msg.style.color = 'var(--red)'; msg.textContent = 'A senha deve ter ao menos 6 caracteres.'; return; }
+  const passwordError = passwordPolicyError(nova);
+  if (passwordError) { msg.style.color = 'var(--red)'; msg.textContent = passwordError; return; }
   if (nova !== conf) { msg.style.color = 'var(--red)'; msg.textContent = 'As senhas não coincidem.'; return; }
   msg.style.color = 'var(--text3)'; msg.textContent = 'Salvando...';
   const { error } = await _sb.auth.updateUser({ password: nova });
