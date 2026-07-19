@@ -154,6 +154,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 /* ── SECTION HEADER */
 .section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
 .section-hdr h2{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.04em}
+.at-mobile-card{padding:16px;border-bottom:1px solid var(--border);background:var(--surface)}
+.at-mobile-card:last-child{border-bottom:none}
+.at-mobile-actions{display:flex;align-items:center;gap:6px;margin-top:13px;padding-top:12px;border-top:1px solid var(--border)}
+.at-whatsapp-action{flex:1;justify-content:center;border-color:rgba(16,185,129,.45);color:var(--green-dark);background:var(--green-light)}
 
 /* ── MODAL */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(8,12,22,0.65);z-index:100;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;backdrop-filter:blur(8px)}
@@ -232,6 +236,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .amt-btn.active{color:var(--green);border-bottom-color:var(--green)}
 @media(max-width:768px){
   #qas-environment-badge{bottom:72px !important}
+  #page-atendimentos > .section-hdr{display:none}
+  #page-atendimentos > .card{padding:12px 0 0;overflow:hidden}
+  #page-atendimentos .filters{padding:0 14px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr}
+  #page-atendimentos .filters select{min-width:0;width:100%}
   .sidebar{display:none !important}
   .main{margin-left:0}
   .topbar{padding:0 16px;height:52px}
