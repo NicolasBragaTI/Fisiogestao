@@ -73,6 +73,7 @@ test('cadastro e troca de senha exigem senha forte', () => {
   assert.match(auth, /\[0-9\]/);
   assert.match(auth, /\[\^A-Za-z0-9\]/);
   assert.doesNotMatch(auth, /senha deve ter ao menos (6|8) caracteres/i);
+  assert.doesNotMatch(indexHtml, /senha deve ter no mínimo (6|8) caracteres/i);
 });
 
 test('lembretes de WhatsApp exigem consentimento e não incluem dados clínicos', () => {
