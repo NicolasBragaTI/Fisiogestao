@@ -206,3 +206,10 @@ function navToLink(page){
   const btn = [...document.querySelectorAll('.nav-item')].find(b=>b.textContent.trim().toLowerCase().includes(page));
   navTo(page, btn);
 }
+
+function openMobileCreate(){
+  const activePage=document.querySelector('.page.active')?.id;
+  if(activePage==='page-pacientes') return openModalPaciente();
+  if(activePage==='page-pacotes') return openModalPacote();
+  return openModalAtend();
+}
