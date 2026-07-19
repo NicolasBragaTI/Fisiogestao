@@ -17,6 +17,11 @@ function openModalAtend(id){
     document.getElementById('atend-metodo').value=a.metodo||'Pix';
     document.getElementById('atend-vencimento').value=a.vencimento||'';
     document.getElementById('atend-obs').value=a.obs||'';
+    document.getElementById('atend-confirmacao').value=a.confirmationStatus||'pending';
+    document.getElementById('atend-whatsapp-area').style.display='block';
+    document.getElementById('atend-lembrete-info').textContent=a.reminderSentAt
+      ? 'Último lembrete preparado em '+new Date(a.reminderSentAt).toLocaleString('pt-BR')+'.'
+      : 'O WhatsApp será aberto com uma mensagem pronta para você confirmar o envio.';
     // popular pacote depois dos outros campos; aoSelecionarPacote vai reconstruir o select de status
     // mapeia em_pacote → pendente para o select simplificado de pacote
     const statusParaSelect = a.status==='em_pacote' ? 'pendente' : (a.status||'pago');
@@ -43,6 +48,8 @@ function openModalAtend(id){
     document.getElementById('atend-status').value='pendente';
     document.getElementById('atend-vencimento').value='';
     document.getElementById('atend-obs').value='';
+    document.getElementById('atend-confirmacao').value='pending';
+    document.getElementById('atend-whatsapp-area').style.display='none';
   }
   calcSaldo();
   document.getElementById('modal-atend').classList.add('open');
@@ -171,7 +178,9 @@ async function salvarAtend(){
     vencimento:pacoteId?'':document.getElementById('atend-vencimento').value,
     obs:document.getElementById('atend-obs').value,
     historicoPagamentos:finalHist,
-    pacoteId
+    pacoteId,
+    confirmationStatus:document.getElementById('atend-confirmacao').value,
+    reminderSentAt:editAtendId?(atendimentos.find(x=>x.id===editAtendId)?.reminderSentAt||''):''
   };
   try{
     await dbSaveAtend(obj, !editAtendId);
@@ -221,6 +230,32 @@ async function salvarAtend(){
     if(activePage==='page-pacientes') renderPacientes();
     if(activePage==='page-pacotes') renderPacotes();
   } catch(e){ toast('Erro ao salvar: '+e.message,'error'); }
+}
+
+function telefoneWhatsApp(numero){
+  let digits=String(numero||'').replace(/\D/g,'');
+  if(digits.startsWith('00')) digits=digits.slice(2);
+  if(digits.length===10||digits.length===11) digits='55'+digits;
+  return /^\d{12,13}$/.test(digits)?digits:'';
+}
+
+async function enviarLembreteWhatsApp(){
+  if(!editAtendId){toast('Salve o atendimento antes de enviar o lembrete.','error');return;}
+  const a=atendimentos.find(x=>x.id===editAtendId);
+  const p=a&&pacientes.find(x=>x.id===a.pacienteId);
+  if(!a||!p){toast('Atendimento ou paciente não encontrado.','error');return;}
+  if(!p.whatsappConsent){toast('Registre a autorização de WhatsApp na ficha do paciente.','error');return;}
+  const telefone=telefoneWhatsApp(p.tel);
+  if(!telefone){toast('Cadastre um WhatsApp válido com DDD na ficha do paciente.','error');return;}
+  const primeiroNome=p.nome.trim().split(/\s+/)[0];
+  const mensagem=`Olá, ${primeiroNome}! Passando para lembrar do seu atendimento no dia ${fmtData(a.data)}${a.hora?' às '+a.hora:''}. Você pode confirmar sua presença, por favor?`;
+  window.open(`https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`,'_blank','noopener,noreferrer');
+  a.reminderSentAt=new Date().toISOString();
+  try{
+    await dbSaveAtend(a,false);
+    document.getElementById('atend-lembrete-info').textContent='Lembrete preparado agora. Confirme o envio no WhatsApp.';
+    toast('WhatsApp aberto. Confirme o envio da mensagem.');
+  }catch(e){toast('WhatsApp aberto, mas não foi possível registrar o lembrete: '+e.message,'error');}
 }
 
 async function delAtend(id){

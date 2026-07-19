@@ -123,8 +123,10 @@ function openModalPaciente(id){
     document.getElementById('pac-diag').value=p.diag||'';
     document.getElementById('pac-valor').value=p.valorPadrao||'';
     document.getElementById('pac-obs').value=p.obs||'';
+    document.getElementById('pac-whatsapp-consent').checked=p.whatsappConsent===true;
   } else {
     fields.forEach(f=>document.getElementById(f).value='');
+    document.getElementById('pac-whatsapp-consent').checked=false;
   }
   document.getElementById('modal-pac').classList.add('open');
 }
@@ -141,7 +143,8 @@ async function salvarPaciente(){
     end:document.getElementById('pac-end').value,
     diag:document.getElementById('pac-diag').value,
     valorPadrao:document.getElementById('pac-valor').value,
-    obs:document.getElementById('pac-obs').value
+    obs:document.getElementById('pac-obs').value,
+    whatsappConsent:document.getElementById('pac-whatsapp-consent').checked
   };
   try{
     await dbSavePaciente(obj, !editPacId);
@@ -175,6 +178,7 @@ function verPaciente(id){
   document.getElementById('ver-body').innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
       ${p.tel?`<div><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Telefone</div><div style="font-size:14px">${esc(p.tel)}</div></div>`:''}
+      ${p.tel?`<div><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Lembretes WhatsApp</div><div style="font-size:14px;color:${p.whatsappConsent?'var(--green)':'var(--text3)'}">${p.whatsappConsent?'Autorizados':'Não autorizados'}</div></div>`:''}
       ${p.nasc?`<div><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Nascimento</div><div style="font-size:14px">${fmtData(p.nasc)} · ${calcIdade(p.nasc)} anos</div></div>`:''}
       ${p.end?`<div style="grid-column:1/-1"><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Endereço</div><div style="font-size:14px">${esc(p.end)}</div></div>`:''}
       ${p.diag?`<div style="grid-column:1/-1"><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Diagnóstico</div><div style="font-size:14px">${esc(p.diag)}</div></div>`:''}

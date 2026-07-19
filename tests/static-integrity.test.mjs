@@ -61,6 +61,22 @@ test('migrações críticas de segurança e desempenho estão versionadas', () =
   assert.ok(existsSync(join(root, 'supabase/migrations/20260718125341_add_fk_covering_indexes.sql')));
 });
 
+test('lembretes de WhatsApp exigem consentimento e não incluem dados clínicos', () => {
+  const core = readFileSync(join(root, 'js/core.js'), 'utf8');
+  const appointments = readFileSync(join(root, 'js/appointments.js'), 'utf8');
+  const patients = readFileSync(join(root, 'js/patients.js'), 'utf8');
+  const migration = readFileSync(join(root, 'supabase/migrations/20260718190000_add_whatsapp_reminders.sql'), 'utf8');
+
+  assert.match(core, /whatsapp_consent/);
+  assert.match(core, /confirmation_status/);
+  assert.match(patients, /pac-whatsapp-consent/);
+  assert.match(appointments, /if\(!p\.whatsappConsent\)/);
+  assert.match(appointments, /https:\/\/wa\.me\//);
+  assert.doesNotMatch(appointments.match(/const mensagem=`[^`]+`/)?.[0] || '', /diag|obs|valor|pagamento/i);
+  assert.match(migration, /default false/);
+  assert.match(migration, /pending.*confirmed.*cancelled/s);
+});
+
 test('página de vendas aponta para o checkout oficial', () => {
   const sales = readFileSync(join(root, 'js/sales.js'), 'utf8');
   assert.match(sales, /https:\/\/go\.perfectpay\.com\.br\/PPU38CQECIM/);

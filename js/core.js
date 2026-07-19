@@ -28,14 +28,16 @@ async function loadData(){
   if(e1||e2){ console.error(e1||e2); return; }
   pacientes = (pacs||[]).map(p => ({
     id: p.id, nome: p.nome, tel: p.tel||'', nasc: p.nasc||'',
-    end: p.end_local||'', diag: p.diag||'', valorPadrao: p.valor_padrao||'', obs: p.obs||''
+    end: p.end_local||'', diag: p.diag||'', valorPadrao: p.valor_padrao||'', obs: p.obs||'',
+    whatsappConsent: p.whatsapp_consent===true
   }));
   atendimentos = (atends||[]).map(a => ({
     id: a.id, pacienteId: a.paciente_id, data: a.data||'', hora: a.hora||'', horaFim: a.hora_fim||'',
     valor: a.valor||0, valorRecebido: a.valor_recebido||0, metodo: a.metodo||'', status: a.status||'pendente',
     vencimento: a.vencimento||'', obs: a.obs||'', dataPagamento: a.data_pagamento||'',
     historicoPagamentos: Array.isArray(a.historico_pagamentos) ? a.historico_pagamentos : [],
-    pacoteId: a.pacote_id||''
+    pacoteId: a.pacote_id||'', confirmationStatus: a.confirmation_status||'pending',
+    reminderSentAt: a.reminder_sent_at||''
   }));
 }
 
@@ -44,6 +46,7 @@ async function dbSavePaciente(p, isNew){
     const { data, error } = await _sb.from('pacientes').insert({
       id: p.id, nome: p.nome, tel: p.tel||null, nasc: p.nasc||null,
       end_local: p.end||null, diag: p.diag||null, valor_padrao: p.valorPadrao||null, obs: p.obs||null,
+      whatsapp_consent: p.whatsappConsent===true,
       user_id: currentUser.id
     }).select('id');
     if(error) throw error;
@@ -51,7 +54,8 @@ async function dbSavePaciente(p, isNew){
   } else {
     const { data, error } = await _sb.from('pacientes').update({
       nome: p.nome, tel: p.tel||null, nasc: p.nasc||null,
-      end_local: p.end||null, diag: p.diag||null, valor_padrao: p.valorPadrao||null, obs: p.obs||null
+      end_local: p.end||null, diag: p.diag||null, valor_padrao: p.valorPadrao||null, obs: p.obs||null,
+      whatsapp_consent: p.whatsappConsent===true
     }).eq('id', p.id).eq('user_id', currentUser.id).select('id');
     if(error) throw error;
     if(!data||!data.length) throw new Error('Sem permissão para editar este paciente.');
@@ -68,7 +72,9 @@ async function dbSaveAtend(a, isNew){
       id: a.id, paciente_id: a.pacienteId, data: a.data||null, hora: a.hora||null, hora_fim: a.horaFim||null,
       valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
       vencimento: a.vencimento||null, obs: a.obs||null, data_pagamento: a.dataPagamento||null,
-      historico_pagamentos: a.historicoPagamentos||[], pacote_id: a.pacoteId||null, user_id: currentUser.id
+      historico_pagamentos: a.historicoPagamentos||[], pacote_id: a.pacoteId||null,
+      confirmation_status: a.confirmationStatus||'pending', reminder_sent_at: a.reminderSentAt||null,
+      user_id: currentUser.id
     }).select('id');
     if(error) throw error;
     if(!data||!data.length) throw new Error('Sem permissão para criar atendimento.');
@@ -77,7 +83,8 @@ async function dbSaveAtend(a, isNew){
       paciente_id: a.pacienteId, data: a.data||null, hora: a.hora||null, hora_fim: a.horaFim||null,
       valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
       vencimento: a.vencimento||null, obs: a.obs||null, data_pagamento: a.dataPagamento||null,
-      historico_pagamentos: a.historicoPagamentos||[], pacote_id: a.pacoteId||null
+      historico_pagamentos: a.historicoPagamentos||[], pacote_id: a.pacoteId||null,
+      confirmation_status: a.confirmationStatus||'pending', reminder_sent_at: a.reminderSentAt||null
     }).eq('id', a.id).eq('user_id', currentUser.id).select('id');
     if(error) throw error;
     if(!data||!data.length) throw new Error('Sem permissão para editar este atendimento.');
