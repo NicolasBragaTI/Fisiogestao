@@ -88,6 +88,7 @@ test('aba de atendimentos lembra e permite preparar confirmações pelo WhatsApp
   const appointments = readFileSync(join(root, 'js/appointments.js'), 'utf8');
   const payments = readFileSync(join(root, 'js/payments.js'), 'utf8');
   assert.match(indexHtml, /id="at-reminder-alert"/);
+  assert.match(indexHtml, /id="bn-atendimentos"/);
   assert.match(payments, /confirmationStatus==='pending'&&!a\.reminderSentAt/);
   assert.match(payments, /enviarLembreteWhatsApp\('\$\{a\.id\}'\)/);
   assert.match(appointments, /const id=atendimentoId\|\|editAtendId/);
