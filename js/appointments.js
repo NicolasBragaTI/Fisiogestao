@@ -239,9 +239,10 @@ function telefoneWhatsApp(numero){
   return /^\d{12,13}$/.test(digits)?digits:'';
 }
 
-async function enviarLembreteWhatsApp(){
-  if(!editAtendId){toast('Salve o atendimento antes de enviar o lembrete.','error');return;}
-  const a=atendimentos.find(x=>x.id===editAtendId);
+async function enviarLembreteWhatsApp(atendimentoId){
+  const id=atendimentoId||editAtendId;
+  if(!id){toast('Salve o atendimento antes de enviar o lembrete.','error');return;}
+  const a=atendimentos.find(x=>x.id===id);
   const p=a&&pacientes.find(x=>x.id===a.pacienteId);
   if(!a||!p){toast('Atendimento ou paciente não encontrado.','error');return;}
   if(!p.whatsappConsent){toast('Registre a autorização de WhatsApp na ficha do paciente.','error');return;}
@@ -253,8 +254,11 @@ async function enviarLembreteWhatsApp(){
   a.reminderSentAt=new Date().toISOString();
   try{
     await dbSaveAtend(a,false);
-    document.getElementById('atend-lembrete-info').textContent='Lembrete preparado agora. Confirme o envio no WhatsApp.';
+    const info=document.getElementById('atend-lembrete-info');
+    if(info&&editAtendId===id) info.textContent='Lembrete preparado agora. Confirme o envio no WhatsApp.';
     toast('WhatsApp aberto. Confirme o envio da mensagem.');
+    await loadData();
+    if(document.getElementById('page-atendimentos')?.classList.contains('active')) renderAtendimentos();
   }catch(e){toast('WhatsApp aberto, mas não foi possível registrar o lembrete: '+e.message,'error');}
 }
 

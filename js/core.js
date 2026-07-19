@@ -136,6 +136,13 @@ function badgeHtml(status, vencimento){
   return `<span class="badge ${map[s]||'badge-cancelado'}"><i class="ti ${ico[s]||'ti-minus'}"></i>${label[s]||s}</span>`;
 }
 
+function confirmationBadgeHtml(a){
+  if(a.confirmationStatus==='confirmed') return '<span class="badge badge-pago"><i class="ti ti-circle-check"></i>Confirmado</span>';
+  if(a.confirmationStatus==='cancelled') return '<span class="badge badge-cancelado"><i class="ti ti-x"></i>Cancelado</span>';
+  if(a.reminderSentAt) return '<span class="badge badge-parcial"><i class="ti ti-brand-whatsapp"></i>Lembrete preparado</span>';
+  return '<span class="badge badge-pendente"><i class="ti ti-bell"></i>Aguardando lembrete</span>';
+}
+
 function situacaoChip(a){
   const s = statusComVencimento(a);
   if(s==='pago') return `<span class="days-chip days-ok">Pago</span>`;

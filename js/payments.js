@@ -242,6 +242,16 @@ function renderAtendimentos(){
   if(mes) list=list.filter(a=>a.data&&a.data.startsWith(mes));
   if(pid) list=list.filter(a=>a.pacienteId===pid);
   list.sort((a,b)=>b.data.localeCompare(a.data));
+  const reminderAlert=document.getElementById('at-reminder-alert');
+  const reminders=atendimentos.filter(a=>
+    a.data>=today()&&a.status!=='cancelado'&&a.confirmationStatus==='pending'&&!a.reminderSentAt
+  );
+  if(reminderAlert){
+    reminderAlert.style.display=reminders.length?'flex':'none';
+    document.getElementById('at-reminder-title').textContent=reminders.length===1
+      ? '1 atendimento está aguardando o envio do lembrete'
+      : `${reminders.length} atendimentos estão aguardando o envio do lembrete`;
+  }
   const tbody=document.getElementById('at-tbody');
   const empty=document.getElementById('at-empty');
   if(!list.length){tbody.innerHTML='';empty.style.display='block';return;}
@@ -262,6 +272,7 @@ function renderAtendimentos(){
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:13px">${esc(nomePac(a.pacienteId))}</div>
           <div style="font-size:12px;color:var(--text3);margin-top:2px">${fmtData(a.data)}${a.hora?' · '+a.hora:''}</div>
+          <div style="margin-top:5px">${confirmationBadgeHtml(a)}</div>
           ${a.obs?`<div style="font-size:12px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">${esc(a.obs)}</div>`:''}
         </div>
         <div style="text-align:right;flex-shrink:0">
@@ -269,6 +280,7 @@ function renderAtendimentos(){
           <div style="margin-top:4px">${badgeHtml(statusComVencimento(a))}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0">
+          ${a.confirmationStatus==='pending'?`<button class="btn btn-ghost btn-sm" title="${a.reminderSentAt?'Preparar novo lembrete':'Enviar lembrete pelo WhatsApp'}" onclick="enviarLembreteWhatsApp('${a.id}')" style="color:var(--green)"><i class="ti ti-brand-whatsapp"></i></button>`:''}
           <button class="btn btn-ghost btn-sm" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
           <button class="btn btn-ghost btn-sm" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
         </div>
@@ -288,7 +300,9 @@ function renderAtendimentos(){
           ${badgeHtml(statusComVencimento(a))}
           ${a.pacoteId?`<div style="font-size:11px;color:var(--green);margin-top:3px;display:flex;align-items:center;gap:3px"><i class="ti ti-package"></i>${esc(pacotes.find(x=>x.id===a.pacoteId)?.nome||'Pacote')}</div>`:''}
         </td>
+        <td>${confirmationBadgeHtml(a)}</td>
         <td style="text-align:right">
+          ${a.confirmationStatus==='pending'?`<button class="btn btn-ghost btn-sm" title="${a.reminderSentAt?'Preparar novo lembrete':'Enviar lembrete pelo WhatsApp'}" onclick="enviarLembreteWhatsApp('${a.id}')" style="color:var(--green)"><i class="ti ti-brand-whatsapp"></i></button>`:''}
           <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
           <button class="btn btn-ghost btn-sm" title="Remover" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
         </td>
