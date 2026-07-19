@@ -548,6 +548,23 @@
       </div>
 
       <div class="form-section-divider"></div>
+      <div class="form-section-label">Confirmação do paciente</div>
+      <div class="form-group">
+        <label>Status da confirmação</label>
+        <select id="atend-confirmacao">
+          <option value="pending">A confirmar</option>
+          <option value="confirmed">Confirmado</option>
+          <option value="cancelled">Cancelado pelo paciente</option>
+        </select>
+      </div>
+      <div id="atend-whatsapp-area" style="display:none;background:var(--green-light);border:1px solid rgba(16,185,129,.25);border-radius:var(--radius);padding:12px 14px;margin-bottom:4px">
+        <button type="button" class="btn btn-outline" style="width:100%;justify-content:center;background:var(--surface)" onclick="enviarLembreteWhatsApp()">
+          <i class="ti ti-brand-whatsapp"></i> Enviar lembrete pelo WhatsApp
+        </button>
+        <div id="atend-lembrete-info" style="font-size:11px;color:var(--text2);line-height:1.4;margin-top:8px;text-align:center">O WhatsApp será aberto com uma mensagem pronta para você confirmar o envio.</div>
+      </div>
+
+      <div class="form-section-divider"></div>
       <div class="form-group" style="margin-bottom:0"><label>Observações clínicas</label><textarea id="atend-obs" placeholder="Evolução, procedimentos, observações..."></textarea></div>
     </div>
     <div class="modal-foot">
@@ -596,6 +613,10 @@
         <div class="form-group"><label>Telefone / WhatsApp</label><input type="tel" id="pac-tel" placeholder="(00) 00000-0000"></div>
         <div class="form-group"><label>Data de nascimento</label><input type="date" id="pac-nasc"></div>
       </div>
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:11px 12px;margin:-2px 0 14px;background:var(--green-light);border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--text2);line-height:1.4">
+        <input type="checkbox" id="pac-whatsapp-consent" style="width:17px;height:17px;margin-top:1px;accent-color:var(--green);flex-shrink:0">
+        <span><strong style="color:var(--text)">Autoriza lembretes pelo WhatsApp</strong><br><span style="font-size:11px">Registre o consentimento do paciente. As mensagens não incluem informações clínicas.</span></span>
+      </label>
       <div class="form-group"><label>Endereço (local de atendimento)</label><input type="text" id="pac-end" placeholder="Rua, número, bairro, cidade"></div>
       <div class="form-group"><label>Diagnóstico / Motivo</label><input type="text" id="pac-diag" placeholder="Ex: Lombalgia, pós-op joelho, AVC..."></div>
       <div class="form-group"><label>Valor padrão da sessão (R$)</label><input type="number" id="pac-valor" min="0" step="0.01" placeholder="0,00"></div>
