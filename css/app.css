@@ -289,6 +289,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   .bn-item i{font-size:22px;transition:color 0.12s}
   .bn-item.active{color:var(--green)}
   .bn-item.active i{color:var(--green)}
+  .bn-item:focus{outline:none}
+  .bn-item:focus-visible{background:var(--green-light);border-radius:12px}
   .bn-fab{flex:none;width:50px;height:50px;margin-top:-20px;background:linear-gradient(135deg,#12c78a,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(16,185,129,0.45);flex-direction:column;gap:0;font-size:0;padding:0;transition:transform 0.12s,box-shadow 0.12s}
   .bn-fab i{font-size:24px;color:#fff}
   .bn-fab:active{transform:scale(0.93);box-shadow:0 2px 8px rgba(16,185,129,0.3)}
