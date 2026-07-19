@@ -84,6 +84,15 @@ test('botão móvel adiciona paciente quando a página de pacientes está ativa'
   assert.match(core, /return openModalPaciente\(\)/);
 });
 
+test('aba de atendimentos lembra e permite preparar confirmações pelo WhatsApp', () => {
+  const appointments = readFileSync(join(root, 'js/appointments.js'), 'utf8');
+  const payments = readFileSync(join(root, 'js/payments.js'), 'utf8');
+  assert.match(indexHtml, /id="at-reminder-alert"/);
+  assert.match(payments, /confirmationStatus==='pending'&&!a\.reminderSentAt/);
+  assert.match(payments, /enviarLembreteWhatsApp\('\$\{a\.id\}'\)/);
+  assert.match(appointments, /const id=atendimentoId\|\|editAtendId/);
+});
+
 test('página de vendas aponta para o checkout oficial', () => {
   const sales = readFileSync(join(root, 'js/sales.js'), 'utf8');
   assert.match(sales, /https:\/\/go\.perfectpay\.com\.br\/PPU38CQECIM/);

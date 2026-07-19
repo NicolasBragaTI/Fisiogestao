@@ -236,6 +236,13 @@
         <h2>Atendimentos</h2>
         <button class="btn btn-primary" onclick="openModalAtend()"><i class="ti ti-plus"></i> Novo atendimento</button>
       </div>
+      <div id="at-reminder-alert" style="display:none;background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--radius-lg);padding:13px 16px;margin-bottom:14px;align-items:center;gap:11px;color:var(--amber-text)">
+        <i class="ti ti-bell-ringing" style="font-size:20px;flex-shrink:0"></i>
+        <div style="flex:1;min-width:0">
+          <div id="at-reminder-title" style="font-size:13px;font-weight:700"></div>
+          <div style="font-size:11px;margin-top:2px;opacity:.85">Use o botão do WhatsApp ao lado do atendimento para preparar a mensagem.</div>
+        </div>
+      </div>
       <div class="card" style="margin-bottom:0">
         <div class="filters">
           <select id="at-mes" onchange="renderAtendimentos()"></select>
@@ -245,7 +252,7 @@
           <table class="pay-table">
             <thead>
               <tr>
-                <th>Paciente</th><th>Data</th><th>Horário</th><th>Método</th><th>Observações</th><th style="text-align:right">Valor</th><th>Status</th><th style="text-align:right"></th>
+                <th>Paciente</th><th>Data</th><th>Horário</th><th>Método</th><th>Observações</th><th style="text-align:right">Valor</th><th>Status</th><th>Confirmação</th><th style="text-align:right"></th>
               </tr>
             </thead>
             <tbody id="at-tbody"></tbody>
