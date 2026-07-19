@@ -187,7 +187,7 @@ async function navTo(page, btn){
   closeSidebar();
   // sync bottom nav
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
-  const bnMap={'visao-geral':'bn-visao-geral','agenda':'bn-agenda','pacientes':'bn-pacientes','pagamentos':'bn-pagamentos'};
+  const bnMap={'visao-geral':'bn-visao-geral','agenda':'bn-agenda','atendimentos':'bn-atendimentos','pacientes':'bn-pacientes','pagamentos':'bn-pagamentos'};
   if(bnMap[page]) document.getElementById(bnMap[page])?.classList.add('active');
   const titles={
     'visao-geral':'Visão geral','pagamentos':'Pagamentos',
