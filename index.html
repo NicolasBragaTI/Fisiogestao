@@ -42,7 +42,7 @@
     <div id="auth-register" style="display:none">
       <div class="form-group"><label>Nome completo</label><input type="text" id="reg-nome" placeholder="Seu nome"></div>
       <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="seu@email.com"></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="reg-password" placeholder="Mínimo 8 caracteres"></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="reg-password" placeholder="12+ caracteres, maiúscula, número e símbolo"></div>
       <div class="form-group"><label>Confirmar senha</label><input type="password" id="reg-confirm" placeholder="Repita a senha" onkeydown="if(event.key==='Enter')doRegister()"></div>
       <button class="btn btn-primary" onclick="doRegister()" style="width:100%;margin-top:8px;padding:12px;font-size:15px"><i class="ti ti-user-plus"></i> Criar conta</button>
     </div>
@@ -475,7 +475,7 @@
           <div style="display:flex;flex-direction:column;gap:16px">
             <div>
               <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Nova senha</label>
-              <input type="password" id="senha-nova" placeholder="Mínimo 6 caracteres" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+              <input type="password" id="senha-nova" placeholder="12+ caracteres, maiúscula, número e símbolo" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
             </div>
             <div>
               <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Confirmar senha</label>
@@ -813,7 +813,7 @@
     </div>
     <div class="form-group" style="margin-bottom:14px">
       <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Nova senha</label>
-      <input type="password" id="senha-nova" class="form-control" placeholder="Mínimo 6 caracteres" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
+      <input type="password" id="senha-nova" class="form-control" placeholder="12+ caracteres, maiúscula, número e símbolo" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;color:var(--text)">
     </div>
     <div class="form-group" style="margin-bottom:18px">
       <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Confirmar senha</label>
