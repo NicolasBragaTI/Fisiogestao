@@ -76,6 +76,21 @@ test('cadastro e troca de senha exigem senha forte', () => {
   assert.doesNotMatch(indexHtml, /senha deve ter no mínimo (6|8) caracteres/i);
 });
 
+test('administração de cadastros usa RLS sem reabrir RPCs privilegiadas', () => {
+  const auth = readFileSync(join(root, 'js/auth.js'), 'utf8');
+  const migration = readFileSync(join(root, 'supabase/migrations/20260725125301_restore_admin_access_with_rls.sql'), 'utf8');
+
+  assert.match(auth, /\.from\('profiles'\)[\s\S]*\.select\('id,email,role,created_at,nome'\)/);
+  assert.match(auth, /\.from\('profiles'\)\.update\(\{ role \}\)\.eq\('id', userId\)/);
+  assert.doesNotMatch(auth, /\.rpc\('admin_get_users'/);
+  assert.doesNotMatch(auth, /\.rpc\('admin_update_role'/);
+  assert.match(migration, /create schema if not exists private/i);
+  assert.match(migration, /security definer[\s\S]*set search_path = ''/i);
+  assert.match(migration, /profiles_admin_select/);
+  assert.match(migration, /profiles_admin_update/);
+  assert.match(migration, /revoke execute on function public\.admin_get_users\(\) from public, anon, authenticated/i);
+});
+
 test('lembretes de WhatsApp exigem consentimento e não incluem dados clínicos', () => {
   const core = readFileSync(join(root, 'js/core.js'), 'utf8');
   const appointments = readFileSync(join(root, 'js/appointments.js'), 'utf8');
