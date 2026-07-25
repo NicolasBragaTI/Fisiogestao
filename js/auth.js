@@ -12,12 +12,11 @@ async function checkAuth() {
 async function loadProfile() {
   const { data } = await _sb.from('profiles').select('*').eq('id', currentUser.id).single();
   currentProfile = data;
-  // A gestão de contas fica temporariamente restrita ao painel do Supabase.
-  // Não exponha RPCs SECURITY DEFINER no cliente apenas para montar esse menu.
+  const isAdmin = currentProfile?.role === 'admin';
   const navAdmin = document.getElementById('nav-admin');
-  if (navAdmin) navAdmin.style.display = 'none';
+  if (navAdmin) navAdmin.style.display = isAdmin ? 'block' : 'none';
   const navCadastros = document.getElementById('nav-cadastros');
-  if (navCadastros) navCadastros.style.display = 'none';
+  if (navCadastros) navCadastros.style.display = isAdmin ? 'flex' : 'none';
   const footerEl = document.getElementById('sidebar-user');
   if (footerEl) footerEl.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${currentProfile?.nome || currentUser.email}</div><div style="font-size:11px;color:var(--text3)">${currentUser.email}</div>`;
   const nome = currentProfile?.nome || currentUser.email || '';
@@ -254,6 +253,8 @@ function openMobileUserMenu(){
     <div style="border-top:1px solid var(--border)">
       ${menuItem('ti-user','Meu perfil',`closeMobileUserMenu();navTo('perfil',null)`)}
       ${menuItem('ti-chart-bar','Relatório mensal',`closeMobileUserMenu();navTo('relatorio',null)`)}
+      ${isAdmin?menuItem('ti-users-group','Cadastros',`closeMobileUserMenu();navTo('cadastros',null)`):''}
+      ${isAdmin?menuItem('ti-shield','Admin',`closeMobileUserMenu();navTo('admin',null)`):''}
       <div style="height:1px;background:var(--border);margin:4px 0"></div>
       ${menuItem('ti-lock','Alterar senha',`closeMobileUserMenu();openAlterarSenha()`)}
       ${menuItem('ti-logout','Sair',`closeMobileUserMenu();doLogout()`,'color:var(--red)')}
@@ -445,7 +446,14 @@ async function renderCadastros() {
   const stats = document.getElementById('cadastros-stats');
   if (!list) return;
   list.innerHTML = '<div style="color:var(--text3);padding:20px">Carregando...</div>';
-  const { data: profiles, error } = await _sb.rpc('admin_get_users');
+  if (currentProfile?.role !== 'admin') {
+    list.innerHTML = '<div style="color:var(--red);padding:20px">Acesso restrito ao administrador.</div>';
+    return;
+  }
+  const { data: profiles, error } = await _sb
+    .from('profiles')
+    .select('id,email,role,created_at,nome')
+    .order('created_at', { ascending: false });
   if (error) { list.innerHTML = '<div style="color:var(--red);padding:20px">Erro: ' + error.message + '</div>'; return; }
 
   const total = profiles.length;
@@ -520,7 +528,14 @@ async function renderAdmin() {
   const el = document.getElementById('admin-list');
   if (!el) return;
   el.innerHTML = '<div style="color:var(--text3);padding:20px">Carregando...</div>';
-  const { data: profiles, error } = await _sb.rpc('admin_get_users');
+  if (currentProfile?.role !== 'admin') {
+    el.innerHTML = '<div style="color:var(--red);padding:20px">Acesso restrito ao administrador.</div>';
+    return;
+  }
+  const { data: profiles, error } = await _sb
+    .from('profiles')
+    .select('id,email,role,created_at,nome')
+    .order('created_at', { ascending: false });
   if (error) { el.innerHTML = '<div style="color:var(--red);padding:20px">Erro: ' + error.message + '</div>'; return; }
   if (!profiles || !profiles.length) { el.innerHTML = '<div class="empty"><i class="ti ti-users"></i><p>Nenhum usuário</p></div>'; return; }
   const roleColors = { admin:'var(--green)', user:'var(--blue)', disabled:'var(--red)' };
@@ -551,7 +566,15 @@ async function renderAdmin() {
 
 async function changeUserRole(userId, role) {
   if (!role) return;
-  const { error } = await _sb.rpc('admin_update_role', { target_user_id: userId, new_role: role });
+  if (currentProfile?.role !== 'admin') {
+    toast('Acesso restrito ao administrador.', 'error');
+    return;
+  }
+  if (!['admin', 'user', 'disabled'].includes(role)) {
+    toast('Papel de usuário inválido.', 'error');
+    return;
+  }
+  const { error } = await _sb.from('profiles').update({ role }).eq('id', userId);
   if (error) { toast('Erro: ' + error.message, 'error'); return; }
   toast('Usuário alterado com sucesso!', 'success');
   renderAdmin();
