@@ -109,7 +109,30 @@ function renderDashboard(){
   renderCharts();
 }
 
-function renderCharts(){
+let _chartJsPromise = null;
+function ensureChartJs(){
+  if(window.Chart) return Promise.resolve(window.Chart);
+  if(_chartJsPromise) return _chartJsPromise;
+  _chartJsPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+    script.async = true;
+    script.onload = () => resolve(window.Chart);
+    script.onerror = () => reject(new Error('Não foi possível carregar o gráfico.'));
+    document.head.appendChild(script);
+  });
+  return _chartJsPromise;
+}
+
+async function renderCharts(){
+  // O gráfico não é exibido no celular; evita baixar a biblioteca sem necessidade.
+  if(window.matchMedia('(max-width: 768px)').matches) return;
+  try {
+    await ensureChartJs();
+  } catch(error) {
+    console.warn(error.message);
+    return;
+  }
   const now = new Date();
   const labels=[], data=[], barColors=[];
   const greens=['#10b981','#34d399','#6ee7b7','#a7f3d0','#d1fae5','#ecfdf5'];

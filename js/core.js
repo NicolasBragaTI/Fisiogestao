@@ -18,6 +18,7 @@ let pacientes = [];
 let atendimentos = [];
 let editAtendId = null, editPacId = null;
 let charts = {};
+let _dataLoadedAt = 0;
 
 async function loadData(){
   const [{ data: pacs, error: e1 }, { data: atends, error: e2 }] = await Promise.all([
@@ -39,6 +40,11 @@ async function loadData(){
     pacoteId: a.pacote_id||'', confirmationStatus: a.confirmation_status||'pending',
     reminderSentAt: a.reminder_sent_at||''
   }));
+  _dataLoadedAt = Date.now();
+}
+
+async function ensureDataFresh(maxAgeMs = 60000){
+  if(!_dataLoadedAt || Date.now() - _dataLoadedAt > maxAgeMs) await loadData();
 }
 
 async function dbSavePaciente(p, isNew){
@@ -196,7 +202,7 @@ async function navTo(page, btn){
   };
   document.getElementById('page-title').textContent=titles[page]||page;
   const dataPages=['visao-geral','pagamentos','atendimentos','pacientes','relatorio','pacotes'];
-  if(dataPages.includes(page)) await loadData();
+  if(dataPages.includes(page)) await ensureDataFresh();
   if(page==='visao-geral') renderDashboard();
   if(page==='pagamentos'){populatePayFilters();renderPagamentos();}
   if(page==='atendimentos'){populateAtFilters();renderAtendimentos();}

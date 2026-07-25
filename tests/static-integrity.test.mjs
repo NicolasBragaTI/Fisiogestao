@@ -152,6 +152,16 @@ test('recarregamento restaura a interface antes de buscar os dados em paralelo',
   assert.match(core, /Promise\.all\(\[[\s\S]*dbLoadPacotes\(\)/);
 });
 
+test('navegação reutiliza dados recentes e gráfico pesado carrega apenas no desktop', () => {
+  const core = readFileSync(join(root, 'js/core.js'), 'utf8');
+  const dashboard = readFileSync(join(root, 'js/dashboard.js'), 'utf8');
+  assert.match(core, /async function ensureDataFresh/);
+  assert.match(core, /if\(dataPages\.includes\(page\)\) await ensureDataFresh\(\)/);
+  assert.doesNotMatch(indexHtml, /<script[^>]+Chart\.js/i);
+  assert.match(dashboard, /matchMedia\('\(max-width: 768px\)'\)/);
+  assert.match(dashboard, /script\.async = true/);
+});
+
 test('tela de login não aparece antes da verificação da sessão', () => {
   assert.match(indexHtml, /id="boot-screen"[^>]*display:flex/);
   assert.match(indexHtml, /id="auth-screen"[^>]*display:none/);
