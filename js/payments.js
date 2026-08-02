@@ -263,7 +263,6 @@ function renderAtendimentos(){
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:14px">${esc(nomePac(a.pacienteId))}</div>
             <div style="font-size:12px;color:var(--text3);margin-top:3px"><i class="ti ti-calendar-event" style="margin-right:3px"></i>${fmtData(a.data)}${a.hora?' às '+a.hora:''}</div>
-            ${a.obs?`<div style="font-size:12px;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px">${esc(a.obs)}</div>`:''}
           </div>
           <div style="text-align:right;flex-shrink:0">
             <div style="font-weight:800;font-size:15px">${brl(a.valor)}</div>
@@ -285,7 +284,6 @@ function renderAtendimentos(){
         <td>${fmtData(a.data)}</td>
         <td>${a.hora||'<span style="color:var(--text3)">—</span>'}</td>
         <td>${a.metodo||'—'}</td>
-        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">${a.obs||''}</td>
         <td style="text-align:right;font-weight:600">${brl(a.valor)}</td>
         <td>
           ${badgeHtml(statusComVencimento(a))}

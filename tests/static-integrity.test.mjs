@@ -120,7 +120,12 @@ test('formulário de atendimento contém somente os cinco campos essenciais', ()
   const atendimentosTable = indexHtml.match(/<table class="pay-table">[\s\S]*?id="at-tbody"[\s\S]*?<\/table>/)?.[0] ?? '';
   const payments = readFileSync(join(root, 'js/payments.js'), 'utf8');
   assert.doesNotMatch(atendimentosTable, /<th>Confirmação<\/th>/);
+  assert.doesNotMatch(atendimentosTable, /<th>Observações<\/th>/);
   assert.doesNotMatch(payments, /confirmationBadgeHtml\(a\)/);
+  const renderAtendimentos = payments.match(/function renderAtendimentos\(\)[\s\S]*$/)?.[0] ?? '';
+  assert.notEqual(renderAtendimentos, '');
+  assert.doesNotMatch(renderAtendimentos, /a\.obs/);
+  assert.match(indexHtml, /<textarea id="pac-obs"/);
 });
 
 test('página de vendas aponta para o checkout oficial', () => {
