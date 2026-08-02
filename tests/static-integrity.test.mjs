@@ -116,6 +116,10 @@ test('aba de atendimentos mantém confirmação manual sem mensageria', () => {
   assert.match(indexHtml, /id="bn-atendimentos"/);
   assert.match(indexHtml, /id="atend-confirmacao"/);
   assert.match(indexHtml, /<option value="confirmed">Confirmado<\/option>/);
+  const atendimentosTable = indexHtml.match(/<table class="pay-table">[\s\S]*?id="at-tbody"[\s\S]*?<\/table>/)?.[0] ?? '';
+  const payments = readFileSync(join(root, 'js/payments.js'), 'utf8');
+  assert.doesNotMatch(atendimentosTable, /<th>Confirmação<\/th>/);
+  assert.doesNotMatch(payments, /confirmationBadgeHtml\(a\)/);
 });
 
 test('página de vendas aponta para o checkout oficial', () => {

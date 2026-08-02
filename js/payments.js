@@ -270,7 +270,6 @@ function renderAtendimentos(){
             <div style="margin-top:5px">${badgeHtml(statusComVencimento(a))}</div>
           </div>
         </div>
-        <div style="margin-top:10px">${confirmationBadgeHtml(a)}</div>
         <div class="at-mobile-actions">
           <div style="flex:1"></div>
           <button class="btn btn-ghost btn-sm" title="Editar atendimento" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i><span>Editar</span></button>
@@ -292,7 +291,6 @@ function renderAtendimentos(){
           ${badgeHtml(statusComVencimento(a))}
           ${a.pacoteId?`<div style="font-size:11px;color:var(--green);margin-top:3px;display:flex;align-items:center;gap:3px"><i class="ti ti-package"></i>${esc(pacotes.find(x=>x.id===a.pacoteId)?.nome||'Pacote')}</div>`:''}
         </td>
-        <td>${confirmationBadgeHtml(a)}</td>
         <td style="text-align:right">
           <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
           <button class="btn btn-ghost btn-sm" title="Remover" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
