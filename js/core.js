@@ -176,6 +176,7 @@ function closeSidebar(){
   document.getElementById('sidebar-overlay').classList.remove('open');
 }
 async function navTo(page, btn){
+  if(page==='atendimentos') page='agenda';
   const adminPages = ['admin','cadastros'];
   if(adminPages.includes(page) && currentProfile?.role !== 'admin'){
     toast('Acesso restrito ao administrador.', 'error');
@@ -188,19 +189,18 @@ async function navTo(page, btn){
   closeSidebar();
   // sync bottom nav
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
-  const bnMap={'visao-geral':'bn-visao-geral','agenda':'bn-agenda','atendimentos':'bn-atendimentos','pacientes':'bn-pacientes','pagamentos':'bn-pagamentos'};
+  const bnMap={'visao-geral':'bn-visao-geral','agenda':'bn-agenda','pacientes':'bn-pacientes','pagamentos':'bn-pagamentos'};
   if(bnMap[page]) document.getElementById(bnMap[page])?.classList.add('active');
   const titles={
     'visao-geral':'Visão geral','pagamentos':'Pagamentos',
-    'atendimentos':'Atendimentos','pacientes':'Pacientes','relatorio':'Relatório mensal','agenda':'Agenda',
+    'pacientes':'Pacientes','relatorio':'Relatório mensal','agenda':'Agenda',
     'admin':'Controle de acesso','cadastros':'Cadastros de usuários','perfil':'Meu perfil','pacotes':'Pacotes de sessões'
   };
   document.getElementById('page-title').textContent=titles[page]||page;
-  const dataPages=['visao-geral','pagamentos','atendimentos','pacientes','relatorio','pacotes'];
+  const dataPages=['visao-geral','pagamentos','pacientes','relatorio','pacotes','agenda'];
   if(dataPages.includes(page)) await ensureDataFresh();
   if(page==='visao-geral') renderDashboard();
   if(page==='pagamentos'){populatePayFilters();renderPagamentos();}
-  if(page==='atendimentos'){populateAtFilters();renderAtendimentos();}
   if(page==='pacientes') renderPacientes();
   if(page==='relatorio'){populateRelMes();renderRelatorio();}
   if(page==='agenda'){semanaAtual();}

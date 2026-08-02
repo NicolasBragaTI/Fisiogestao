@@ -96,7 +96,6 @@ async function confirmarPagamentoPaciente(){
     renderPacientes();
     const apPag=[...document.querySelectorAll('.page.active')][0]?.id;
     if(apPag==='page-pagamentos'){populatePayFilters();renderPagamentos();}
-    if(apPag==='page-atendimentos'){populateAtFilters();renderAtendimentos();}
   }catch(e){
     toast('Erro ao salvar: '+e.message,'error');
   }

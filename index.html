@@ -76,9 +76,8 @@
   </div>
   <nav class="sidebar-nav">
     <button class="nav-item active" onclick="navTo('visao-geral',this)"><i class="ti ti-layout-dashboard"></i> Visão geral</button>
-    <button class="nav-item" onclick="navTo('pacientes',this)"><i class="ti ti-users"></i> Pacientes</button>
     <button class="nav-item" onclick="navTo('agenda',this)"><i class="ti ti-calendar-week"></i> Agenda</button>
-    <button class="nav-item" onclick="navTo('atendimentos',this)"><i class="ti ti-calendar"></i> Atendimentos</button>
+    <button class="nav-item" onclick="navTo('pacientes',this)"><i class="ti ti-users"></i> Pacientes</button>
     <button class="nav-item" onclick="navTo('pagamentos',this)"><i class="ti ti-credit-card"></i> Pagamentos</button>
     <button class="nav-item" onclick="navTo('pacotes',this)"><i class="ti ti-package"></i> Pacotes</button>
     <div class="nav-section">Relatórios</div>
@@ -128,7 +127,6 @@
     <button class="bn-item active" id="bn-visao-geral" onclick="navTo('visao-geral',this)"><i class="ti ti-home"></i>Início</button>
     <button class="bn-item" id="bn-agenda" onclick="navTo('agenda',this)"><i class="ti ti-calendar-week"></i>Agenda</button>
     <button class="bn-fab" onclick="openMobileCreate()" title="Adicionar novo"><i class="ti ti-plus"></i></button>
-    <button class="bn-item" id="bn-atendimentos" onclick="navTo('atendimentos',this)"><i class="ti ti-stethoscope"></i>Atend.</button>
     <button class="bn-item" id="bn-pacientes" onclick="navTo('pacientes',this)"><i class="ti ti-users"></i>Pacientes</button>
     <button class="bn-item" id="bn-pagamentos" onclick="navTo('pagamentos',this)"><i class="ti ti-credit-card"></i>Pagamentos</button>
   </nav>
@@ -223,31 +221,6 @@
       </div>
       <!-- lista -->
       <div id="pacotes-lista"></div>
-    </div>
-
-    <!-- ===== ATENDIMENTOS ===== -->
-    <div class="page" id="page-atendimentos">
-      <div class="section-hdr">
-        <h2>Atendimentos</h2>
-        <button class="btn btn-primary" onclick="openModalAtend()"><i class="ti ti-plus"></i> Novo atendimento</button>
-      </div>
-      <div class="card" style="margin-bottom:0">
-        <div class="filters">
-          <select id="at-mes" onchange="renderAtendimentos()"></select>
-          <select id="at-paciente" onchange="renderAtendimentos()"></select>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="pay-table">
-            <thead>
-              <tr>
-                <th>Paciente</th><th>Data</th><th>Horário</th><th>Método</th><th style="text-align:right">Valor</th><th>Status</th><th style="text-align:right"></th>
-              </tr>
-            </thead>
-            <tbody id="at-tbody"></tbody>
-          </table>
-        </div>
-        <div id="at-empty" class="empty" style="display:none"><i class="ti ti-calendar-off"></i><p>Nenhum atendimento encontrado</p></div>
-      </div>
     </div>
 
     <!-- ===== PACIENTES ===== -->

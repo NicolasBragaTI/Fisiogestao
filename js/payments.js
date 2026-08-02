@@ -15,17 +15,6 @@ function populatePayFilters(){
   if(curP) pp.value=curP;
 }
 
-function populateAtFilters(){
-  const ms=document.getElementById('at-mes');
-  const cur=ms.value;
-  ms.innerHTML='<option value="">Todos os meses</option>'+meses().map(m=>`<option value="${m}">${fmtMes(m)}</option>`).join('');
-  if(cur) ms.value=cur;
-  const pp=document.getElementById('at-paciente');
-  const curP=pp.value;
-  pp.innerHTML='<option value="">Todos os pacientes</option>'+pacientes.map(p=>`<option value="${p.id}">${esc(p.nome)}</option>`).join('');
-  if(curP) pp.value=curP;
-}
-
 function limparFiltrosPag(){
   document.getElementById('pay-mes').value='';
   document.getElementById('pay-paciente').value='';
@@ -228,68 +217,6 @@ function renderPagamentos(){
           ${a._tipo==='pagamento-pacote'
             ? `<button class="btn btn-ghost btn-sm" title="Ver pacote" onclick="navTo('pacotes',null)" style="color:var(--green)"><i class="ti ti-package"></i></button>`
             : `<button class="btn btn-ghost btn-sm" title="Histórico de pagamentos" onclick="abrirHistoricoPag('${a.id}')" style="color:var(--green)"><i class="ti ti-history"></i></button>`}
-          <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
-          <button class="btn btn-ghost btn-sm" title="Remover" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
-        </td>
-      </tr>`).join('');
-  }
-}
-
-function renderAtendimentos(){
-  const mes=document.getElementById('at-mes').value;
-  const pid=document.getElementById('at-paciente').value;
-  let list=[...atendimentos];
-  if(mes) list=list.filter(a=>a.data&&a.data.startsWith(mes));
-  if(pid) list=list.filter(a=>a.pacienteId===pid);
-  list.sort((a,b)=>b.data.localeCompare(a.data));
-  const tbody=document.getElementById('at-tbody');
-  const empty=document.getElementById('at-empty');
-  if(!list.length){tbody.innerHTML='';empty.style.display='block';return;}
-  empty.style.display='none';
-  const mobile=window.innerWidth<=768;
-  const tableWrap=tbody.closest('[style*="overflow-x"]');
-  let cardList=document.getElementById('at-card-list');
-  if(!cardList){
-    cardList=document.createElement('div');
-    cardList.id='at-card-list';
-    tableWrap.parentNode.insertBefore(cardList,tableWrap.nextSibling);
-  }
-  if(mobile){
-    tableWrap.style.display='none';
-    cardList.innerHTML=list.map(a=>`
-      <div class="at-mobile-card">
-        <div style="display:flex;align-items:flex-start;gap:11px">
-          <div class="pav" style="width:38px;height:38px;font-size:11px;flex-shrink:0">${iniciais(nomePac(a.pacienteId))}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:14px">${esc(nomePac(a.pacienteId))}</div>
-            <div style="font-size:12px;color:var(--text3);margin-top:3px"><i class="ti ti-calendar-event" style="margin-right:3px"></i>${fmtData(a.data)}${a.hora?' às '+a.hora:''}</div>
-          </div>
-          <div style="text-align:right;flex-shrink:0">
-            <div style="font-weight:800;font-size:15px">${brl(a.valor)}</div>
-            <div style="margin-top:5px">${badgeHtml(statusComVencimento(a))}</div>
-          </div>
-        </div>
-        <div class="at-mobile-actions">
-          <div style="flex:1"></div>
-          <button class="btn btn-ghost btn-sm" title="Editar atendimento" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i><span>Editar</span></button>
-          <button class="btn btn-ghost btn-sm" title="Remover atendimento" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
-        </div>
-      </div>`).join('');
-  } else {
-    tableWrap.style.display='';
-    cardList.innerHTML='';
-    tbody.innerHTML=list.map(a=>`
-      <tr>
-        <td><div style="display:flex;align-items:center;gap:8px"><div class="pav" style="width:30px;height:30px;font-size:10px">${iniciais(nomePac(a.pacienteId))}</div><span style="font-weight:500">${esc(nomePac(a.pacienteId))}</span></div></td>
-        <td>${fmtData(a.data)}</td>
-        <td>${a.hora||'<span style="color:var(--text3)">—</span>'}</td>
-        <td>${a.metodo||'—'}</td>
-        <td style="text-align:right;font-weight:600">${brl(a.valor)}</td>
-        <td>
-          ${badgeHtml(statusComVencimento(a))}
-          ${a.pacoteId?`<div style="font-size:11px;color:var(--green);margin-top:3px;display:flex;align-items:center;gap:3px"><i class="ti ti-package"></i>${esc(pacotes.find(x=>x.id===a.pacoteId)?.nome||'Pacote')}</div>`:''}
-        </td>
-        <td style="text-align:right">
           <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
           <button class="btn btn-ghost btn-sm" title="Remover" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
         </td>

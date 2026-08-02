@@ -162,7 +162,7 @@ async function salvarAtend(){
     renderDashboard();
     const activePage=[...document.querySelectorAll('.page.active')][0]?.id;
     if(activePage==='page-pagamentos'){populatePayFilters();renderPagamentos();}
-    if(activePage==='page-atendimentos'){populateAtFilters();renderAtendimentos();}
+    if(activePage==='page-agenda') renderAgenda();
     if(activePage==='page-pacientes') renderPacientes();
     if(activePage==='page-pacotes') renderPacotes();
   } catch(e){ toast('Erro ao salvar: '+e.message,'error'); }
@@ -190,7 +190,7 @@ async function delAtend(id){
     renderDashboard();
     const activePage=[...document.querySelectorAll('.page.active')][0]?.id;
     if(activePage==='page-pagamentos'){populatePayFilters();renderPagamentos();}
-    if(activePage==='page-atendimentos'){populateAtFilters();renderAtendimentos();}
+    if(activePage==='page-agenda') renderAgenda();
     if(activePage==='page-pacotes') renderPacotes();
   } catch(e){ toast('Erro ao remover: '+e.message,'error'); }
 }

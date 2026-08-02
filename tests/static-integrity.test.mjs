@@ -113,19 +113,22 @@ test('botão móvel adiciona paciente quando a página de pacientes está ativa'
 });
 
 test('formulário de atendimento contém somente os cinco campos essenciais', () => {
-  assert.match(indexHtml, /id="bn-atendimentos"/);
   const modal = indexHtml.match(/id="modal-atend"[\s\S]*?<!-- MODAL PACIENTE -->/)?.[0] ?? '';
   const fieldIds = [...modal.matchAll(/<(?:input|select|textarea)[^>]+id="([^"]+)"/g)].map(match => match[1]);
   assert.deepEqual(fieldIds, ['atend-paciente','atend-pacote','atend-data','atend-hora','atend-valor']);
-  const atendimentosTable = indexHtml.match(/<table class="pay-table">[\s\S]*?id="at-tbody"[\s\S]*?<\/table>/)?.[0] ?? '';
   const payments = readFileSync(join(root, 'js/payments.js'), 'utf8');
-  assert.doesNotMatch(atendimentosTable, /<th>Confirmação<\/th>/);
-  assert.doesNotMatch(atendimentosTable, /<th>Observações<\/th>/);
   assert.doesNotMatch(payments, /confirmationBadgeHtml\(a\)/);
-  const renderAtendimentos = payments.match(/function renderAtendimentos\(\)[\s\S]*$/)?.[0] ?? '';
-  assert.notEqual(renderAtendimentos, '');
-  assert.doesNotMatch(renderAtendimentos, /a\.obs/);
   assert.match(indexHtml, /<textarea id="pac-obs"/);
+});
+
+test('agenda centraliza atendimentos sem manter uma tela duplicada', () => {
+  const core = readFileSync(join(root, 'js/core.js'), 'utf8');
+  const agenda = readFileSync(join(root, 'js/agenda.js'), 'utf8');
+  assert.doesNotMatch(indexHtml, /id="page-atendimentos"|id="bn-atendimentos"|navTo\('atendimentos'/);
+  assert.match(core, /if\(page==='atendimentos'\) page='agenda'/);
+  assert.match(core, /'pacotes','agenda'/);
+  assert.match(agenda, /openModalAtend\(\)/);
+  assert.match(agenda, /editAtend\('/);
 });
 
 test('página de vendas aponta para o checkout oficial', () => {
