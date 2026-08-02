@@ -112,6 +112,7 @@ function calcIdade(nasc){
 function openModalPaciente(id){
   editPacId=id||null;
   document.getElementById('modal-pac-title').textContent=id?'Editar paciente':'Novo paciente';
+  const maisDados=document.getElementById('pac-mais-dados');
   const fields=['pac-nome','pac-tel','pac-nasc','pac-end','pac-diag','pac-valor','pac-obs'];
   if(id){
     const p=pacientes.find(x=>x.id===id);
@@ -122,8 +123,10 @@ function openModalPaciente(id){
     document.getElementById('pac-diag').value=p.diag||'';
     document.getElementById('pac-valor').value=p.valorPadrao||'';
     document.getElementById('pac-obs').value=p.obs||'';
+    maisDados.open=Boolean(p.nasc||p.end||p.diag||p.valorPadrao);
   } else {
     fields.forEach(f=>document.getElementById(f).value='');
+    maisDados.open=false;
   }
   document.getElementById('modal-pac').classList.add('open');
 }

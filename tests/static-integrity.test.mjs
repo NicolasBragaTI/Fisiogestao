@@ -131,6 +131,16 @@ test('agenda centraliza atendimentos sem manter uma tela duplicada', () => {
   assert.match(agenda, /editAtend\('/);
 });
 
+test('cadastro de paciente prioriza somente os campos essenciais', () => {
+  const modal = indexHtml.match(/id="modal-pac"[\s\S]*?<!-- MODAL VER PACIENTE -->/)?.[0] ?? '';
+  const patients = readFileSync(join(root, 'js/patients.js'), 'utf8');
+  assert.match(modal, /id="pac-nome"[\s\S]*id="pac-tel"[\s\S]*id="pac-obs"/);
+  assert.match(modal, /<details class="patient-more" id="pac-mais-dados">/);
+  assert.match(modal, /id="pac-nasc"[\s\S]*id="pac-end"[\s\S]*id="pac-diag"[\s\S]*id="pac-valor"/);
+  assert.match(patients, /maisDados\.open=Boolean/);
+  assert.match(patients, /maisDados\.open=false/);
+});
+
 test('página de vendas aponta para o checkout oficial', () => {
   const sales = readFileSync(join(root, 'js/sales.js'), 'utf8');
   assert.match(sales, /https:\/\/go\.perfectpay\.com\.br\/PPU38CQECIM/);
