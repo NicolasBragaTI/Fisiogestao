@@ -69,14 +69,6 @@ function renderDashboard(){
       </div>
       <div class="mc-value" style="font-size:22px;color:var(--amber)">${brl(totalPend)}</div>
       <div class="mc-sub">${(()=>{const n=pendentes.length+atrasados.length+parciais.length;return n+' '+(n===1?'sessão avulsa':'sessões avulsas');})()} ${qtdPacotesAtivos>0?' · '+qtdPacotesAtivos+' pacote'+(qtdPacotesAtivos!==1?'s':''):''}</div>
-    </div>
-    <div class="metric-card">
-      <div class="mc-row">
-        <span class="mc-label">Atrasados</span>
-        <div class="mc-icon" style="background:#fee2e2"><i class="ti ti-alert-circle" style="font-size:20px;color:var(--red)"></i></div>
-      </div>
-      <div class="mc-value" style="color:${atrasados.length?'var(--red)':'var(--text)'}">${atrasados.length}</div>
-      <div class="mc-sub">${atrasados.length?brl(atrasados.reduce((s,a)=>s+parseFloat(a.valor||0),0))+'em aberto':'<span style="color:var(--green)"><i class="ti ti-circle-check"></i> Tudo em dia</span>'}</div>
     </div>`;
 
 
@@ -92,19 +84,6 @@ function renderDashboard(){
           <div class="pi-val ${cls==='red'?'late':cls==='amber'?'soon':''}">${brl(a.valor)}</div>
         </div>`;}).join('')
     : '<div class="empty" style="padding:1.5rem"><p>Sem atendimentos</p></div>';
-
-  // pendentes/atrasados
-  const criticos = [...atrasados,...pendentes].slice(0,5);
-  document.getElementById('dash-pendentes').innerHTML = criticos.length
-    ? criticos.map(a=>{
-        const s=statusComVencimento(a);
-        const cls=s==='atrasado'?'red':'amber';
-        return `<div class="pending-item">
-          <div class="pav ${cls}">${iniciais(nomePac(a.pacienteId))}</div>
-          <div><div class="pi-name">${esc(nomePac(a.pacienteId))}</div><div class="pi-sub">${situacaoChip(a)}</div></div>
-          <div class="pi-val ${cls==='red'?'late':'soon'}">${brl(a.valor)}</div>
-        </div>`;}).join('')
-    : '<div class="empty" style="padding:1.5rem"><i class="ti ti-circle-check" style="font-size:28px;color:var(--green);opacity:0.6;display:block;margin-bottom:6px"></i><p>Nenhum pagamento pendente</p></div>';
 
   renderCharts();
 }

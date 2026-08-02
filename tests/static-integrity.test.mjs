@@ -164,6 +164,17 @@ test('navegação reutiliza dados recentes e gráfico pesado carrega apenas no d
   assert.match(dashboard, /script\.async = true/);
 });
 
+test('visão geral exibe somente os indicadores essenciais e não destaca atrasados', () => {
+  const dashboard = readFileSync(join(root, 'js/dashboard.js'), 'utf8');
+  const overview = indexHtml.match(/id="page-visao-geral"[\s\S]*?<!-- ===== PAGAMENTOS ===== -->/)?.[0] ?? '';
+  assert.notEqual(overview, '');
+  assert.doesNotMatch(overview, /Pendentes \/ Atrasados|dash-pendentes/);
+  assert.doesNotMatch(dashboard, /<span class="mc-label">Atrasados<\/span>|dash-pendentes/);
+  assert.match(dashboard, /Atendimentos este mês/);
+  assert.match(dashboard, /Recebido este mês/);
+  assert.match(dashboard, /A receber/);
+});
+
 test('tela de login não aparece antes da verificação da sessão', () => {
   assert.match(indexHtml, /id="boot-screen"[^>]*display:flex/);
   assert.match(indexHtml, /id="auth-screen"[^>]*display:none/);

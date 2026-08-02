@@ -75,7 +75,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .page{display:none}.page.active{display:block}
 
 /* ── METRIC CARDS */
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
 .dash-main-grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-bottom:0}
 .metric-card{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:22px;box-shadow:var(--shadow);position:relative;transition:box-shadow 0.2s,transform 0.2s;display:flex;flex-direction:column}
 .metric-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
