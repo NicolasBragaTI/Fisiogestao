@@ -150,6 +150,10 @@ test('pagamentos e pacotes ficam agrupados em Financeiro', () => {
   assert.match(core, /page==='pagamentos'\|\|page==='pacotes'/);
 });
 
+test('cabeçalho não exibe notificações sem funcionalidade', () => {
+  assert.doesNotMatch(indexHtml, /title="Notificações"|ti-bell/);
+});
+
 test('página de vendas aponta para o checkout oficial', () => {
   const sales = readFileSync(join(root, 'js/sales.js'), 'utf8');
   assert.match(sales, /https:\/\/go\.perfectpay\.com\.br\/PPU38CQECIM/);

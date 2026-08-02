@@ -45,8 +45,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .topbar-search input{border:none;background:transparent;outline:none;font-size:13px;color:var(--text);font-family:inherit;width:160px}
 .topbar-search input::placeholder{color:var(--text3)}
 .topbar-search i{color:var(--text3);font-size:14px}
-.topbar-btn{width:36px;height:36px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);transition:all 0.12s}
-.topbar-btn:hover{background:var(--bg);color:var(--text)}
 .topbar-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#12c78a,#059669);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;cursor:pointer;user-select:none;position:relative;box-shadow:0 2px 8px rgba(16,185,129,0.4)}
 .topbar-avatar:hover{opacity:0.9}
 
@@ -253,7 +251,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   .topbar{padding:0 16px;height:52px}
   .topbar-title{font-size:16px}
   .topbar-search{display:none}
-  .topbar-btn{display:none}
   .content{padding:16px 14px;padding-bottom:80px}
   button,.btn,.bn-item,.bn-fab,.topbar-avatar{touch-action:manipulation}
   .filters select,.filters input{min-height:44px}
