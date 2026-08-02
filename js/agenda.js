@@ -173,9 +173,6 @@ function agendaClicarHora(data,hora){
   setTimeout(()=>{
     document.getElementById('atend-data').value=data;
     if(hora) document.getElementById('atend-hora').value=hora;
-    const [hh,mm]=hora.split(':').map(Number);
-    const fimH=String(hh+1).padStart(2,'0');
-    document.getElementById('atend-hora-fim').value=`${fimH}:${String(mm).padStart(2,'0')}`;
   },50);
 }
 

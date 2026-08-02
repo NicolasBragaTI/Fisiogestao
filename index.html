@@ -497,70 +497,24 @@
     </div>
     <div class="modal-body">
 
-      <div class="form-section-label">Paciente</div>
       <div class="form-group">
         <label>Paciente *</label>
         <select id="atend-paciente" onchange="preencherValorPadrao()"></select>
       </div>
-      <div class="form-group" style="margin-bottom:0">
+      <div class="form-group">
         <label>Tipo de sessão *</label>
         <select id="atend-pacote" required onchange="aoSelecionarPacote()">
           <option value="">Sessão avulsa</option>
         </select>
       </div>
-
-      <div class="form-section-divider"></div>
-      <div class="form-section-label">Data e horário</div>
-      <div class="form-group"><label>Data do atendimento *</label><input type="date" id="atend-data"></div>
-      <div class="horario-row">
-        <div class="form-group" style="flex:1;margin-bottom:0"><label>Horário início</label><input type="time" id="atend-hora"></div>
-        <div class="horario-sep">–</div>
-        <div class="form-group" style="flex:1;margin-bottom:0"><label>Horário fim</label><input type="time" id="atend-hora-fim"></div>
-      </div>
-
-      <div class="form-section-divider"></div>
-      <div class="form-section-label">Pagamento</div>
       <div class="fg2">
-        <div class="form-group"><label>Valor da sessão (R$) *</label><input type="number" id="atend-valor" min="0" step="0.01" placeholder="0,00" oninput="calcSaldo()"></div>
-        <div class="form-group"><label>Valor recebido (R$)</label><input type="number" id="atend-recebido" min="0" step="0.01" placeholder="0,00" oninput="calcSaldo()"></div>
-      </div>
-      <div class="fg2">
-        <div class="form-group"><label>Método</label>
-          <select id="atend-metodo">
-            <option>Pix</option><option>Dinheiro</option><option>Cartão de crédito</option>
-            <option>Cartão de débito</option><option>Transferência</option><option>Convênio</option><option>Outro</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Status</label>
-          <select id="atend-status">
-            <option value="pago">Pago</option>
-            <option value="parcial">Parcial</option>
-            <option value="pendente">Pendente</option>
-            <option value="cancelado">Cancelado</option>
-          </select>
-        </div>
-      </div>
-      <div id="saldo-box" style="display:none;background:var(--amber-bg);border:1px solid var(--amber);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--amber-text);margin-bottom:12px">
-        <strong>Saldo restante: <span id="saldo-val">R$ 0,00</span></strong>
+        <div class="form-group"><label>Data do atendimento *</label><input type="date" id="atend-data"></div>
+        <div class="form-group"><label>Hora *</label><input type="time" id="atend-hora"></div>
       </div>
       <div class="form-group" style="margin-bottom:0">
-        <label>Data de vencimento</label>
-        <input type="date" id="atend-vencimento" title="Deixe em branco se já pago">
+        <label>Valor da sessão (R$) *</label>
+        <input type="number" id="atend-valor" min="0" step="0.01" placeholder="0,00">
       </div>
-
-      <div class="form-section-divider"></div>
-      <div class="form-section-label">Confirmação do paciente</div>
-      <div class="form-group">
-        <label>Status da confirmação</label>
-        <select id="atend-confirmacao">
-          <option value="pending">A confirmar</option>
-          <option value="confirmed">Confirmado</option>
-          <option value="cancelled">Cancelado pelo paciente</option>
-        </select>
-      </div>
-      <div class="form-section-divider"></div>
-      <div class="form-group" style="margin-bottom:0"><label>Observações clínicas</label><textarea id="atend-obs" placeholder="Evolução, procedimentos, observações..."></textarea></div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="document.getElementById('modal-atend').classList.remove('open')">Cancelar</button>

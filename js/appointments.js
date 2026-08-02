@@ -11,24 +11,13 @@ function openModalAtend(id){
     sel.value=a.pacienteId;
     document.getElementById('atend-data').value=a.data;
     document.getElementById('atend-hora').value=a.hora||'';
-    document.getElementById('atend-hora-fim').value=a.horaFim||'';
     document.getElementById('atend-valor').value=a.valor||'';
-    document.getElementById('atend-recebido').value=a.valorRecebido||'';
-    document.getElementById('atend-metodo').value=a.metodo||'Pix';
-    document.getElementById('atend-vencimento').value=a.vencimento||'';
-    document.getElementById('atend-obs').value=a.obs||'';
-    document.getElementById('atend-confirmacao').value=a.confirmationStatus||'pending';
-    // popular pacote depois dos outros campos; aoSelecionarPacote vai reconstruir o select de status
-    // mapeia em_pacote → pendente para o select simplificado de pacote
-    const statusParaSelect = a.status==='em_pacote' ? 'pendente' : (a.status||'pago');
     popularPacotesSelect(a.pacienteId, a.pacoteId||'');
-    document.getElementById('atend-status').value=statusParaSelect;
   } else {
     sel.value=pacientes[0]?.id||'';
     popularPacotesSelect(sel.value);
     document.getElementById('atend-data').value=t;
     const horasIni=atendimentos.map(a=>a.hora).filter(Boolean);
-    const horasFim=atendimentos.map(a=>a.horaFim).filter(Boolean);
     function mediaHora(horas){
       if(!horas.length) return '';
       const mins=horas.map(h=>{const[hh,mm]=h.split(':');return parseInt(hh)*60+parseInt(mm);});
@@ -36,31 +25,10 @@ function openModalAtend(id){
       return String(avg/60).padStart(2,'0')+':00';
     }
     document.getElementById('atend-hora').value=mediaHora(horasIni);
-    document.getElementById('atend-hora-fim').value=mediaHora(horasFim);
     const p=pacientes.find(x=>x.id===sel.value);
     document.getElementById('atend-valor').value=p?.valorPadrao||'';
-    document.getElementById('atend-recebido').value='';
-    document.getElementById('atend-metodo').value='Pix';
-    document.getElementById('atend-status').value='pendente';
-    document.getElementById('atend-vencimento').value='';
-    document.getElementById('atend-obs').value='';
-    document.getElementById('atend-confirmacao').value='pending';
   }
-  calcSaldo();
   document.getElementById('modal-atend').classList.add('open');
-}
-
-function calcSaldo(){
-  const valor=parseFloat(document.getElementById('atend-valor').value)||0;
-  const recebido=parseFloat(document.getElementById('atend-recebido').value)||0;
-  const saldo=valor-recebido;
-  const box=document.getElementById('saldo-box');
-  if(recebido>0&&saldo>0){
-    box.style.display='block';
-    document.getElementById('saldo-val').textContent=brl(saldo);
-  } else {
-    box.style.display='none';
-  }
 }
 function preencherValorPadrao(){
   if(editAtendId) return;
@@ -86,38 +54,11 @@ function aoSelecionarPacote(){
   const pac=pacoteId?pacotes.find(x=>x.id===pacoteId):null;
   if(pac){
     document.getElementById('atend-valor').value=pac.valorSessao||0;
-    document.getElementById('atend-recebido').value='0.00';
-    const sel=document.getElementById('atend-status');
-    sel.innerHTML='<option value="pendente">Pendente</option><option value="pago">Pago</option>';
-    sel.value='pendente';
-    // badge "pacote" ao lado do label do status
-    const statusGrp=sel.closest('.form-group');
-    if(!statusGrp.querySelector('.badge-pacote-label')){
-      const badge=document.createElement('span');
-      badge.className='badge-pacote-label';
-      badge.style.cssText='margin-left:6px;font-size:11px;background:var(--green-light,#e6f4ea);color:var(--green);border-radius:4px;padding:2px 7px;font-weight:600;';
-      badge.innerHTML='<i class="ti ti-package" style="font-size:11px"></i> Pacote';
-      statusGrp.querySelector('label').appendChild(badge);
-    }
-    // campos de pagamento não se aplicam a sessões em pacote — oculta
-    document.getElementById('atend-recebido').closest('.fg3').querySelectorAll('input,select').forEach(el=>{
-      if(el.id!=='atend-valor') el.closest('.form-group').style.opacity='0.4';
-    });
-  } else {
-    // restaura campos e preenche com valor padrão do paciente
-    document.querySelectorAll('#modal-atend .form-group').forEach(el=>el.style.opacity='');
+  } else if(!editAtendId) {
     const pid=document.getElementById('atend-paciente').value;
     const p=pacientes.find(x=>x.id===pid);
     document.getElementById('atend-valor').value=p?.valorPadrao||'';
-    document.getElementById('atend-recebido').value='';
-    // restaura opções completas de status
-    const sel=document.getElementById('atend-status');
-    sel.innerHTML='<option value="pago">Pago</option><option value="parcial">Parcial</option><option value="pendente">Pendente</option><option value="cancelado">Cancelado</option>';
-    sel.value='pendente';
-    // remove badge pacote do label
-    document.querySelector('.badge-pacote-label')?.remove();
   }
-  calcSaldo();
 }
 
 function editAtend(id){openModalAtend(id);}
@@ -127,54 +68,55 @@ async function salvarAtend(){
   const data=document.getElementById('atend-data').value;
   const valor=document.getElementById('atend-valor').value;
   if(!pid||!data||!valor){toast('Preencha os campos obrigatórios (*)','error');return;}
-  const recebido=parseFloat(document.getElementById('atend-recebido').value)||0;
   const valorNum=parseFloat(valor);
-  let statusAuto=document.getElementById('atend-status').value;
-  if(statusAuto!=='cancelado'){
-    if(recebido>=valorNum&&valorNum>0) statusAuto='pago';
-    else if(recebido>0) statusAuto='parcial';
-  }
-  const metodo=document.getElementById('atend-metodo').value;
-  // herda histórico existente ao editar, ou cria primeiro entry ao criar com valor recebido
-  let historicoPagamentos=[];
-  if(editAtendId){
-    const existing=atendimentos.find(x=>x.id===editAtendId);
-    historicoPagamentos=existing?.historicoPagamentos||[];
-    // se não há histórico mas há valorRecebido, cria entry retroativa
-    if(!historicoPagamentos.length && recebido>0){
-      historicoPagamentos=[{id:Date.now().toString(),data:existing?.dataPagamento||today(),valor:recebido,metodo,obs:''}];
-    }
-  } else if(recebido>0){
-    historicoPagamentos=[{id:Date.now().toString(),data:today(),valor:recebido,metodo,obs:''}];
-  }
+  const existing=editAtendId?atendimentos.find(x=>x.id===editAtendId):null;
   const pacoteId=document.getElementById('atend-pacote').value||null;
-  // se vinculado a pacote: usa valor/sessao do pacote e status direto do select (sem sobrescrita por valor recebido)
-  const statusSelect=document.getElementById('atend-status').value;
-  let finalValor=valorNum, finalStatus=statusAuto, finalRecebido=recebido, finalHist=historicoPagamentos;
+  let finalValor=valorNum;
+  let finalStatus=existing?.status||'pendente';
+  let finalRecebido=existing?.valorRecebido||0;
+  let finalHist=existing?.historicoPagamentos||[];
   if(pacoteId){
     const pac=pacotes.find(x=>x.id===pacoteId);
     if(pac){
       finalValor=pac.valorSessao;
-      finalRecebido=0;
-      finalHist=[];
-      // status vem direto do select (só pago ou pendente para pacote)
-      finalStatus = (statusSelect==='pago') ? 'pago' : (statusSelect==='cancelado' ? 'cancelado' : 'em_pacote');
+      if(!existing || existing.pacoteId!==pacoteId){
+        finalRecebido=0;
+        finalHist=[];
+        finalStatus='em_pacote';
+      }
     }
+  } else if(existing?.status==='em_pacote'){
+    finalStatus='pendente';
+    finalRecebido=0;
+    finalHist=[];
+  } else if(!existing){
+    finalStatus='pendente';
+    finalRecebido=0;
+    finalHist=[];
   }
+  const metodo=existing?.metodo||'';
+  const confirmationStatus=existing?.confirmationStatus||'pending';
+  const horaFim=existing?.horaFim||'';
+  const vencimento=existing?.vencimento||'';
+  const obs=existing?.obs||'';
+  if(!document.getElementById('atend-hora').value){
+    toast('Informe a hora do atendimento','error');
+    return;
+    }
   const obj={
     id:editAtendId||Date.now().toString(),
     pacienteId:pid,data,
     hora:document.getElementById('atend-hora').value,
-    horaFim:document.getElementById('atend-hora-fim').value,
+    horaFim,
     valor:finalValor,
     valorRecebido:finalRecebido,
     metodo,
     status:finalStatus,
-    vencimento:pacoteId?'':document.getElementById('atend-vencimento').value,
-    obs:document.getElementById('atend-obs').value,
+    vencimento:pacoteId?'':vencimento,
+    obs,
     historicoPagamentos:finalHist,
     pacoteId,
-    confirmationStatus:document.getElementById('atend-confirmacao').value
+    confirmationStatus
   };
   try{
     await dbSaveAtend(obj, !editAtendId);

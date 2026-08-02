@@ -112,10 +112,11 @@ test('botão móvel adiciona paciente quando a página de pacientes está ativa'
   assert.match(core, /return openModalPaciente\(\)/);
 });
 
-test('aba de atendimentos mantém confirmação manual sem mensageria', () => {
+test('formulário de atendimento contém somente os cinco campos essenciais', () => {
   assert.match(indexHtml, /id="bn-atendimentos"/);
-  assert.match(indexHtml, /id="atend-confirmacao"/);
-  assert.match(indexHtml, /<option value="confirmed">Confirmado<\/option>/);
+  const modal = indexHtml.match(/id="modal-atend"[\s\S]*?<!-- MODAL PACIENTE -->/)?.[0] ?? '';
+  const fieldIds = [...modal.matchAll(/<(?:input|select|textarea)[^>]+id="([^"]+)"/g)].map(match => match[1]);
+  assert.deepEqual(fieldIds, ['atend-paciente','atend-pacote','atend-data','atend-hora','atend-valor']);
   const atendimentosTable = indexHtml.match(/<table class="pay-table">[\s\S]*?id="at-tbody"[\s\S]*?<\/table>/)?.[0] ?? '';
   const payments = readFileSync(join(root, 'js/payments.js'), 'utf8');
   assert.doesNotMatch(atendimentosTable, /<th>Confirmação<\/th>/);
