@@ -183,6 +183,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .patient-more summary::after{content:'+';font-size:18px;font-weight:400;margin-left:auto}
 .patient-more[open] summary::after{content:'−'}
 .patient-more-fields{padding-top:16px}
+.finance-tabs{display:inline-flex;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:3px;margin-bottom:16px;gap:2px}
+.finance-tabs button{border:0;background:transparent;color:var(--text2);font-family:inherit;font-size:12px;font-weight:600;padding:7px 14px;border-radius:7px;cursor:pointer}
+.finance-tabs button.active{background:var(--surface);color:var(--green);box-shadow:0 1px 3px rgba(15,23,42,.1)}
 .fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .horario-row{display:flex;align-items:flex-end;gap:12px}

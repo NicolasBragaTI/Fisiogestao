@@ -189,12 +189,13 @@ async function navTo(page, btn){
   closeSidebar();
   // sync bottom nav
   document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
-  const bnMap={'visao-geral':'bn-visao-geral','agenda':'bn-agenda','pacientes':'bn-pacientes','pagamentos':'bn-pagamentos'};
+  const bnMap={'visao-geral':'bn-visao-geral','agenda':'bn-agenda','pacientes':'bn-pacientes','pagamentos':'bn-pagamentos','pacotes':'bn-pagamentos'};
   if(bnMap[page]) document.getElementById(bnMap[page])?.classList.add('active');
+  if(page==='pagamentos'||page==='pacotes') document.getElementById('nav-financeiro')?.classList.add('active');
   const titles={
-    'visao-geral':'Visão geral','pagamentos':'Pagamentos',
+    'visao-geral':'Visão geral','pagamentos':'Financeiro',
     'pacientes':'Pacientes','relatorio':'Relatório mensal','agenda':'Agenda',
-    'admin':'Controle de acesso','cadastros':'Cadastros de usuários','perfil':'Meu perfil','pacotes':'Pacotes de sessões'
+    'admin':'Controle de acesso','cadastros':'Cadastros de usuários','perfil':'Meu perfil','pacotes':'Financeiro'
   };
   document.getElementById('page-title').textContent=titles[page]||page;
   const dataPages=['visao-geral','pagamentos','pacientes','relatorio','pacotes','agenda'];

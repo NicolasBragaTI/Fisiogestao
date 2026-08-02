@@ -141,6 +141,15 @@ test('cadastro de paciente prioriza somente os campos essenciais', () => {
   assert.match(patients, /maisDados\.open=false/);
 });
 
+test('pagamentos e pacotes ficam agrupados em Financeiro', () => {
+  const core = readFileSync(join(root, 'js/core.js'), 'utf8');
+  assert.match(indexHtml, /id="nav-financeiro"[^>]*>[^<]*<i[^>]*><\/i> Financeiro<\/button>/);
+  assert.doesNotMatch(indexHtml, /class="nav-item"[^>]*navTo\('pacotes'/);
+  assert.match(indexHtml, /class="finance-tabs"[\s\S]*Cobranças[\s\S]*Pacotes/);
+  assert.match(core, /'pacotes':'bn-pagamentos'/);
+  assert.match(core, /page==='pagamentos'\|\|page==='pacotes'/);
+});
+
 test('página de vendas aponta para o checkout oficial', () => {
   const sales = readFileSync(join(root, 'js/sales.js'), 'utf8');
   assert.match(sales, /https:\/\/go\.perfectpay\.com\.br\/PPU38CQECIM/);
