@@ -29,16 +29,14 @@ async function loadData(){
   if(e1||e2){ console.error(e1||e2); return; }
   pacientes = (pacs||[]).map(p => ({
     id: p.id, nome: p.nome, tel: p.tel||'', nasc: p.nasc||'',
-    end: p.end_local||'', diag: p.diag||'', valorPadrao: p.valor_padrao||'', obs: p.obs||'',
-    whatsappConsent: p.whatsapp_consent===true
+    end: p.end_local||'', diag: p.diag||'', valorPadrao: p.valor_padrao||'', obs: p.obs||''
   }));
   atendimentos = (atends||[]).map(a => ({
     id: a.id, pacienteId: a.paciente_id, data: a.data||'', hora: a.hora||'', horaFim: a.hora_fim||'',
     valor: a.valor||0, valorRecebido: a.valor_recebido||0, metodo: a.metodo||'', status: a.status||'pendente',
     vencimento: a.vencimento||'', obs: a.obs||'', dataPagamento: a.data_pagamento||'',
     historicoPagamentos: Array.isArray(a.historico_pagamentos) ? a.historico_pagamentos : [],
-    pacoteId: a.pacote_id||'', confirmationStatus: a.confirmation_status||'pending',
-    reminderSentAt: a.reminder_sent_at||''
+    pacoteId: a.pacote_id||'', confirmationStatus: a.confirmation_status||'pending'
   }));
   _dataLoadedAt = Date.now();
 }
@@ -52,7 +50,6 @@ async function dbSavePaciente(p, isNew){
     const { data, error } = await _sb.from('pacientes').insert({
       id: p.id, nome: p.nome, tel: p.tel||null, nasc: p.nasc||null,
       end_local: p.end||null, diag: p.diag||null, valor_padrao: p.valorPadrao||null, obs: p.obs||null,
-      whatsapp_consent: p.whatsappConsent===true,
       user_id: currentUser.id
     }).select('id');
     if(error) throw error;
@@ -60,8 +57,7 @@ async function dbSavePaciente(p, isNew){
   } else {
     const { data, error } = await _sb.from('pacientes').update({
       nome: p.nome, tel: p.tel||null, nasc: p.nasc||null,
-      end_local: p.end||null, diag: p.diag||null, valor_padrao: p.valorPadrao||null, obs: p.obs||null,
-      whatsapp_consent: p.whatsappConsent===true
+      end_local: p.end||null, diag: p.diag||null, valor_padrao: p.valorPadrao||null, obs: p.obs||null
     }).eq('id', p.id).eq('user_id', currentUser.id).select('id');
     if(error) throw error;
     if(!data||!data.length) throw new Error('Sem permissão para editar este paciente.');
@@ -79,7 +75,7 @@ async function dbSaveAtend(a, isNew){
       valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
       vencimento: a.vencimento||null, obs: a.obs||null, data_pagamento: a.dataPagamento||null,
       historico_pagamentos: a.historicoPagamentos||[], pacote_id: a.pacoteId||null,
-      confirmation_status: a.confirmationStatus||'pending', reminder_sent_at: a.reminderSentAt||null,
+      confirmation_status: a.confirmationStatus||'pending',
       user_id: currentUser.id
     }).select('id');
     if(error) throw error;
@@ -90,7 +86,7 @@ async function dbSaveAtend(a, isNew){
       valor: a.valor||0, valor_recebido: a.valorRecebido||0, metodo: a.metodo||null, status: a.status||null,
       vencimento: a.vencimento||null, obs: a.obs||null, data_pagamento: a.dataPagamento||null,
       historico_pagamentos: a.historicoPagamentos||[], pacote_id: a.pacoteId||null,
-      confirmation_status: a.confirmationStatus||'pending', reminder_sent_at: a.reminderSentAt||null
+      confirmation_status: a.confirmationStatus||'pending'
     }).eq('id', a.id).eq('user_id', currentUser.id).select('id');
     if(error) throw error;
     if(!data||!data.length) throw new Error('Sem permissão para editar este atendimento.');
@@ -145,8 +141,7 @@ function badgeHtml(status, vencimento){
 function confirmationBadgeHtml(a){
   if(a.confirmationStatus==='confirmed') return '<span class="badge badge-pago"><i class="ti ti-circle-check"></i>Confirmado</span>';
   if(a.confirmationStatus==='cancelled') return '<span class="badge badge-cancelado"><i class="ti ti-x"></i>Cancelado</span>';
-  if(a.reminderSentAt) return '<span class="badge badge-parcial"><i class="ti ti-brand-whatsapp"></i>Lembrete preparado</span>';
-  return '<span class="badge badge-pendente"><i class="ti ti-bell"></i>Aguardando lembrete</span>';
+  return '<span class="badge badge-pendente"><i class="ti ti-clock"></i>A confirmar</span>';
 }
 
 function situacaoChip(a){

@@ -91,20 +91,18 @@ test('administração de cadastros usa RLS sem reabrir RPCs privilegiadas', () =
   assert.match(migration, /revoke execute on function public\.admin_get_users\(\) from public, anon, authenticated/i);
 });
 
-test('lembretes de WhatsApp exigem consentimento e não incluem dados clínicos', () => {
+test('integração de envio pelo WhatsApp foi removida da aplicação', () => {
   const core = readFileSync(join(root, 'js/core.js'), 'utf8');
   const appointments = readFileSync(join(root, 'js/appointments.js'), 'utf8');
   const patients = readFileSync(join(root, 'js/patients.js'), 'utf8');
-  const migration = readFileSync(join(root, 'supabase/migrations/20260718190000_add_whatsapp_reminders.sql'), 'utf8');
+  const payments = readFileSync(join(root, 'js/payments.js'), 'utf8');
 
-  assert.match(core, /whatsapp_consent/);
+  assert.doesNotMatch(indexHtml, /WhatsApp|at-reminder-alert|pac-whatsapp-consent/i);
+  assert.doesNotMatch(core, /whatsapp_consent|reminder_sent_at|reminderSentAt/i);
+  assert.doesNotMatch(patients, /whatsapp/i);
+  assert.doesNotMatch(appointments, /whatsapp|wa\.me|enviarLembrete/i);
+  assert.doesNotMatch(payments, /whatsapp|enviarLembrete|reminderSentAt/i);
   assert.match(core, /confirmation_status/);
-  assert.match(patients, /pac-whatsapp-consent/);
-  assert.match(appointments, /if\(!p\.whatsappConsent\)/);
-  assert.match(appointments, /https:\/\/wa\.me\//);
-  assert.doesNotMatch(appointments.match(/const mensagem=`[^`]+`/)?.[0] || '', /diag|obs|valor|pagamento/i);
-  assert.match(migration, /default false/);
-  assert.match(migration, /pending.*confirmed.*cancelled/s);
 });
 
 test('botão móvel adiciona paciente quando a página de pacientes está ativa', () => {
@@ -114,16 +112,10 @@ test('botão móvel adiciona paciente quando a página de pacientes está ativa'
   assert.match(core, /return openModalPaciente\(\)/);
 });
 
-test('aba de atendimentos lembra e permite preparar confirmações pelo WhatsApp', () => {
-  const appointments = readFileSync(join(root, 'js/appointments.js'), 'utf8');
-  const payments = readFileSync(join(root, 'js/payments.js'), 'utf8');
-  assert.match(indexHtml, /id="at-reminder-alert"/);
+test('aba de atendimentos mantém confirmação manual sem mensageria', () => {
   assert.match(indexHtml, /id="bn-atendimentos"/);
-  assert.match(payments, /confirmationStatus==='pending'&&!a\.reminderSentAt/);
-  assert.match(payments, /enviarLembreteWhatsApp\('\$\{a\.id\}'\)/);
-  assert.match(payments, /Reenviar lembrete/);
-  assert.match(payments, /at-whatsapp-action/);
-  assert.match(appointments, /const id=atendimentoId\|\|editAtendId/);
+  assert.match(indexHtml, /id="atend-confirmacao"/);
+  assert.match(indexHtml, /<option value="confirmed">Confirmado<\/option>/);
 });
 
 test('página de vendas aponta para o checkout oficial', () => {

@@ -242,16 +242,6 @@ function renderAtendimentos(){
   if(mes) list=list.filter(a=>a.data&&a.data.startsWith(mes));
   if(pid) list=list.filter(a=>a.pacienteId===pid);
   list.sort((a,b)=>b.data.localeCompare(a.data));
-  const reminderAlert=document.getElementById('at-reminder-alert');
-  const reminders=atendimentos.filter(a=>
-    a.data>=today()&&a.status!=='cancelado'&&a.confirmationStatus==='pending'&&!a.reminderSentAt
-  );
-  if(reminderAlert){
-    reminderAlert.style.display=reminders.length?'flex':'none';
-    document.getElementById('at-reminder-title').textContent=reminders.length===1
-      ? '1 atendimento está aguardando o envio do lembrete'
-      : `${reminders.length} atendimentos estão aguardando o envio do lembrete`;
-  }
   const tbody=document.getElementById('at-tbody');
   const empty=document.getElementById('at-empty');
   if(!list.length){tbody.innerHTML='';empty.style.display='block';return;}
@@ -282,7 +272,7 @@ function renderAtendimentos(){
         </div>
         <div style="margin-top:10px">${confirmationBadgeHtml(a)}</div>
         <div class="at-mobile-actions">
-          ${a.confirmationStatus==='pending'?`<button class="btn btn-outline at-whatsapp-action" title="${a.reminderSentAt?'Preparar novo lembrete':'Enviar lembrete pelo WhatsApp'}" onclick="enviarLembreteWhatsApp('${a.id}')"><i class="ti ti-brand-whatsapp"></i><span>${a.reminderSentAt?'Reenviar lembrete':'Enviar lembrete'}</span></button>`:'<div style="flex:1"></div>'}
+          <div style="flex:1"></div>
           <button class="btn btn-ghost btn-sm" title="Editar atendimento" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i><span>Editar</span></button>
           <button class="btn btn-ghost btn-sm" title="Remover atendimento" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
         </div>
@@ -304,7 +294,6 @@ function renderAtendimentos(){
         </td>
         <td>${confirmationBadgeHtml(a)}</td>
         <td style="text-align:right">
-          ${a.confirmationStatus==='pending'?`<button class="btn btn-ghost btn-sm" title="${a.reminderSentAt?'Preparar novo lembrete':'Enviar lembrete pelo WhatsApp'}" onclick="enviarLembreteWhatsApp('${a.id}')" style="color:var(--green)"><i class="ti ti-brand-whatsapp"></i></button>`:''}
           <button class="btn btn-ghost btn-sm" title="Editar" onclick="editAtend('${a.id}')"><i class="ti ti-edit"></i></button>
           <button class="btn btn-ghost btn-sm" title="Remover" onclick="delAtend('${a.id}')" style="color:var(--red)"><i class="ti ti-trash"></i></button>
         </td>
